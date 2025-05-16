@@ -38,6 +38,11 @@ nanobind_add_module(
   # the number of binary wheels that must be built. This
   # does nothing on older Python versions
   STABLE_ABI
+
+  src/shazam/shazam.h
+  src/shazam/shazam.C
+  src/shazam/multifrb.h
+  src/shazam/multifrb.C
 )
 
 # Install directive for scikit-build-core
