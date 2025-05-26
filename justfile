@@ -1,7 +1,6 @@
 pkg  := "shazam"
 desc := "I/O for GMRT ring buffers, with the power of SHAZAM!"
 
-alias l := loc
 alias t := test
 alias d := docs
 alias c := clean
@@ -38,11 +37,6 @@ default:
         )
     )
 
-# Chart LOCs.
-@loc:
-    echo "Charting LOCs..."
-    tokei src tests -o json | tokei-pie
-
 # Clean up.
 @clean:
     echo "Cleaning..."
@@ -58,12 +52,12 @@ default:
 
 # Run tests.
 @test: && clean
-	ward
+  pytest -vv tests
 
 # Install.
 @install: && clean
     echo "Installing..."
-    pip install -e .
+    pip install --no-build-isolation -Ceditable.rebuild=true -ve .
 
 # Uninstall.
 @uninstall: && clean
@@ -75,4 +69,4 @@ default:
 # Build docs.
 @docs:
     echo "Building docs for {{pkg}}..."
-    sphinx-autobuild docs/source docs/build
+    sphinx-reload docs
