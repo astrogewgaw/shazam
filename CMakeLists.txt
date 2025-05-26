@@ -39,8 +39,8 @@ nanobind_add_module(
   # does nothing on older Python versions
   STABLE_ABI
 
-  src/shazam/shazam.h
   src/shazam/shazam.C
+  src/shazam/multihdr.h
   src/shazam/multifrb.h
   src/shazam/multifrb.C
 )
