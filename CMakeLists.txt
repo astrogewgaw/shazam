@@ -43,6 +43,8 @@ nanobind_add_module(
   src/shazam/multihdr.h
   src/shazam/multifrb.h
   src/shazam/multifrb.C
+  src/shazam/utilities.h
+  src/shazam/utilities.C
 )
 
 # Install directive for scikit-build-core

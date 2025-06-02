@@ -1,11 +1,12 @@
 #include "multifrb.h"
+#include "utilities.h"
 
 using MFS = MultiFRBSHM;
 
 unsigned char *MFS::ptrtobeam(int beam) { return m_dataptr + blksize() * beam; }
 
 unsigned char *MFS::ptrtoblk(int beam, int blk) {
-  return ptrtobeam(beam) + (blksize() * nbeamspernode() * blk);
+  return ptrtobeam(beam) + (blksize() * nbeamspernode() * (blk % maxblks()));
 }
 
 unsigned char *MFS::ptrtotime(int beam, double t) {
@@ -13,7 +14,7 @@ unsigned char *MFS::ptrtotime(int beam, double t) {
     throw std::runtime_error("Data not yet written. Exiting...");
   int blk = (int)std::floor(t / blktime());
   int leftsamps = (int)std::round((t - blk * blktime()) / dt());
-  return ptrtoblk(beam, blk % FRBMAXBLKS) + (long)leftsamps * (long)nf();
+  return ptrtoblk(beam, blk) + (long)leftsamps * (long)nf();
 }
 
 void MFS::link() {
@@ -154,14 +155,14 @@ Array MFS::getslice(int beam, double tbeg, double tend) {
 
   unsigned char *ptr = ptrtotime(beam, tbeg);
   unsigned char *endptr = ptrtotime(beam, tend);
-  unsigned char *blkptr =
-      ptrtoblk(beam, (int)std::floor(tbeg / blktime())) + blksize();
+  int blk = (int)std::floor(tbeg / blktime());
+  unsigned char *blkptr = ptrtoblk(beam, blk) + blksize();
 
   for (size_t i = 0;; ++i, ++ptr) {
     if (ptr == blkptr) {
-      blkptr += blksize() * nbeamspernode();
-      ptr += blksize() * nbeamspernode();
-      ptr -= blksize();
+      blk += 1;
+      ptr = ptrtoblk(beam, blk);
+      blkptr = ptrtoblk(beam, blk) + blksize();
     }
     if (ptr == endptr) break;
     buffer[i] = *ptr;
@@ -174,7 +175,7 @@ Array MFS::getslice(int beam, double tbeg, double tend) {
 }
 
 Array MFS::getburst(int beam, double t0, double dm, double width) {
-  return Array();
+  return getslice(beam, t0, t0 + dm2delay(fl(), fh(), dm) + width);
 }
 
 void initmultifrb(nb::module_ m) {
