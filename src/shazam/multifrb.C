@@ -272,8 +272,8 @@ void initmultifrb(nb::module_ m) {
       /** Class methods. **/
       .def("link", &MFS::link)
       .def("unlink", &MFS::unlink)
-      .def("getblk", &MFS::getblk)
-      .def("getslice", &MFS::getslice)
-      .def("getburst", &MFS::getburst)
-      .def("timeofblk", &MFS::timeofblk);
+      .def("timeofblk", &MFS::timeofblk, "blk"_a)
+      .def("getblk", &MFS::getblk, "beam"_a, "blk"_a)
+      .def("getslice", &MFS::getslice, "beam"_a, "tbeg"_a, "tend"_a)
+      .def("getburst", &MFS::getburst, "beam"_a, "t0"_a, "dm"_a, "width"_a);
 }

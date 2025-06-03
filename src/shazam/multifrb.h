@@ -19,6 +19,7 @@
 #include "multihdr.h"
 
 namespace nb = nanobind;
+using namespace nb::literals;
 using Array = nb::ndarray<nb::numpy, unsigned char, nb::ndim<2>>;
 
 constexpr int FRBHDRKEY = 2031;
