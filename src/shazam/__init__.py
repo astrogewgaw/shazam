@@ -1,3 +1,3 @@
-from shazam.internals import MultiFRBSHM
+from shazam.internals import MultiHeader, MultiFRBSHM
 
-__all__ = ["MultiFRBSHM"]
+__all__ = ["MultiHeader", "MultiFRBSHM"]

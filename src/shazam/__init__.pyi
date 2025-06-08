@@ -1,4 +1,3 @@
-from . import internals as internals
-from .internals import MultiFRBSHM as MultiFRBSHM
+from .internals import MultiHeader, MultiFRBSHM
 
-__all__: list = ["MultiFRBSHM"]
+__all__: list = ["MultiHeader", "MultiFRBSHM"]

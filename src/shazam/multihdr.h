@@ -603,4 +603,112 @@ typedef struct {
 }
 #endif
 
+#include <stdexcept>
+#include <string>
+#include <sys/shm.h>
+#include <vector>
+
+#include <nanobind/nanobind.h>
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/vector.h>
+
+namespace nb = nanobind;
+using namespace nb::literals;
+
+constexpr char ANTENNAS[30][4] = {
+    "C00", "C01", "C02", "C03", "C04", "C05", "C06", "C08", "C09", "C10",
+    "C11", "C12", "C13", "C14", "E02", "E03", "E04", "E05", "E06", "S01",
+    "S02", "S03", "S04", "S06", "W01", "W02", "W03", "W04", "W05", "W06"};
+
+constexpr char BEAMTYPES[7][6] = {"IA",  "PA",   "VLT", "PC",
+                                  "CDP", "PASV", "MISC"};
+
+class MultiHeader {
+public:
+  MultiHeader() { link(); };
+  ~MultiHeader() { unlink(); };
+
+  /** Data parameters. **/
+  int nf() { return m_nf; };
+  double fh() { return m_fh; };
+  double fl() { return m_fl; };
+  double df() { return m_df; };
+  double bw() { return m_bw; };
+  double dt() { return m_dt; };
+  int nbits() { return m_nbits; };
+  int nstokes() { return m_nstokes; };
+  bool flipped() { return m_flipped; }
+
+  /** Observation parameters. **/
+  double ra() { return m_ra; };
+  double dec() { return m_dec; };
+  std::string source() { return m_source; };
+  std::string beammode() { return m_beammode; };
+  std::string observer() { return m_observer; };
+  std::string gtaccode() { return m_gtaccode; };
+  std::string gtactitle() { return m_gtactitle; };
+  unsigned int antmaskpol1() { return m_antmaskpol1; };
+  unsigned int antmaskpol2() { return m_antmaskpol2; };
+  std::vector<std::string> antspol1() { return m_antspol1; };
+  std::vector<std::string> antspol2() { return m_antspol2; };
+
+  /** Beam tiling and steering parameters. **/
+  int beamid() { return m_beamid; };
+  int hostid() { return m_hostid; };
+  int nbeams() { return m_nbeams; };
+  std::string hostname() { return m_hostname; };
+  int npcbaselines() { return m_npcbaselines; };
+  int nbeamspernode() { return m_nbeamspernode; };
+  std::vector<double> beamras() { return m_beamras; };
+  std::vector<double> beamdecs() { return m_beamdecs; };
+
+  void link();
+  void unlink();
+  nb::dict asdict();
+
+  friend class MultiFRBSHM;
+
+private:
+  /** Data parameters. **/
+  int m_nf;
+  int m_nbits;
+  double m_fh;
+  double m_fl;
+  double m_df;
+  double m_bw;
+  double m_dt;
+  double m_mjd;
+  int m_nstokes;
+  bool m_flipped;
+
+  /** Observation parameters. **/
+  double m_ra;
+  double m_dec;
+  std::string m_source;
+  std::string m_beammode;
+  std::string m_observer;
+  std::string m_gtaccode;
+  std::string m_gtactitle;
+  unsigned int m_antmaskpol1;
+  unsigned int m_antmaskpol2;
+  std::vector<std::string> m_antspol1;
+  std::vector<std::string> m_antspol2;
+
+  /** Beam tiling and steering parameters. **/
+  int m_beamid;
+  int m_hostid;
+  int m_nbeams;
+  int m_npcbaselines;
+  int m_nbeamspernode;
+  std::string m_hostname;
+  std::vector<double> m_beamras;
+  std::vector<double> m_beamdecs;
+
+  /** Shared memory parameters. **/
+  int m_hdrid;
+  BeamHeaderType *m_hdrptr;
+};
+
+void initmultihdr(nb::module_ m);
+
 #endif

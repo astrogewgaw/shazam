@@ -39,12 +39,15 @@ nanobind_add_module(
   # does nothing on older Python versions
   STABLE_ABI
 
-  src/shazam/shazam.C
   src/shazam/multihdr.h
+  src/shazam/multihdr.C
+  src/shazam/multitel.h
+  src/shazam/multitel.C
   src/shazam/multifrb.h
   src/shazam/multifrb.C
   src/shazam/utilities.h
   src/shazam/utilities.C
+  src/shazam/shazam.C
 )
 
 # Install directive for scikit-build-core
