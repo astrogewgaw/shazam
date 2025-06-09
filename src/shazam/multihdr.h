@@ -615,6 +615,8 @@ typedef struct {
 namespace nb = nanobind;
 using namespace nb::literals;
 
+constexpr int MULTIHDRKEY = 1050;
+
 constexpr char ANTENNAS[30][4] = {
     "C00", "C01", "C02", "C03", "C04", "C05", "C06", "C08", "C09", "C10",
     "C11", "C12", "C13", "C14", "E02", "E03", "E04", "E05", "E06", "S01",

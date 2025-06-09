@@ -4,7 +4,7 @@ using MH = MultiHeader;
 
 void MH::link() {
   /** Attach to header. **/
-  m_hdrid = shmget(DAS_H_KEY, sizeof(BeamHeaderType), SHM_RDONLY);
+  m_hdrid = shmget(MULTIHDRKEY, sizeof(BeamHeaderType), SHM_RDONLY);
   if (m_hdrid < 0)
     throw std::runtime_error(
         "Could not obtain header shared memory ID. Exiting...");
