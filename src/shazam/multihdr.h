@@ -666,6 +666,7 @@ public:
   void unlink();
   nb::dict asdict();
 
+  friend class MultiTELSHM;
   friend class MultiFRBSHM;
 
 private:
