@@ -161,6 +161,7 @@ private:
   /** Shared memory parameters. **/
   int m_hdrid;
   int m_bufid;
+  bool linked;
   BeamHeaderType *m_hdrptr;
   BeamBufferType *m_bufptr;
   unsigned char *m_dataptr;

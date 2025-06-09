@@ -709,6 +709,7 @@ private:
 
   /** Shared memory parameters. **/
   int m_hdrid;
+  bool linked;
   BeamHeaderType *m_hdrptr;
 };
 

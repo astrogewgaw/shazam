@@ -17,77 +17,87 @@ unsigned char *MFS::ptrtotime(int beam, double t) {
 }
 
 void MFS::link() {
-  /** Transfer some private variables from header instance. **/
-  m_hdrid = m_header.m_hdrid;
-  m_hdrptr = m_header.m_hdrptr;
+  if (not linked) {
+    /** Transfer some private variables from header instance. **/
+    m_hdrid = m_header.m_hdrid;
+    m_hdrptr = m_header.m_hdrptr;
 
-  /** Transfer all metadata from the header instance. **/
-  m_nf = m_header.nf();
-  m_fh = m_header.fh();
-  m_fl = m_header.fl();
-  m_df = m_header.df();
-  m_bw = m_header.bw();
-  m_dt = m_header.dt();
-  m_ra = m_header.ra();
-  m_dec = m_header.dec();
-  m_nbits = m_header.nbits();
-  m_beamid = m_header.beamid();
-  m_hostid = m_header.hostid();
-  m_nbeams = m_header.nbeams();
-  m_source = m_header.source();
-  m_nstokes = m_header.nstokes();
-  m_flipped = m_header.flipped();
-  m_beamras = m_header.beamras();
-  m_beamdecs = m_header.beamdecs();
-  m_hostname = m_header.hostname();
-  m_beammode = m_header.beammode();
-  m_observer = m_header.observer();
-  m_antspol1 = m_header.antspol1();
-  m_antspol2 = m_header.antspol2();
-  m_gtaccode = m_header.gtaccode();
-  m_gtactitle = m_header.gtactitle();
-  m_antmaskpol1 = m_header.antmaskpol1();
-  m_antmaskpol2 = m_header.antmaskpol2();
-  m_npcbaselines = m_header.npcbaselines();
-  m_nbeamspernode = m_header.nbeamspernode();
+    /** Transfer all metadata from the header instance. **/
+    m_nf = m_header.nf();
+    m_fh = m_header.fh();
+    m_fl = m_header.fl();
+    m_df = m_header.df();
+    m_bw = m_header.bw();
+    m_dt = m_header.dt();
+    m_ra = m_header.ra();
+    m_dec = m_header.dec();
+    m_nbits = m_header.nbits();
+    m_beamid = m_header.beamid();
+    m_hostid = m_header.hostid();
+    m_nbeams = m_header.nbeams();
+    m_source = m_header.source();
+    m_nstokes = m_header.nstokes();
+    m_flipped = m_header.flipped();
+    m_beamras = m_header.beamras();
+    m_beamdecs = m_header.beamdecs();
+    m_hostname = m_header.hostname();
+    m_beammode = m_header.beammode();
+    m_observer = m_header.observer();
+    m_antspol1 = m_header.antspol1();
+    m_antspol2 = m_header.antspol2();
+    m_gtaccode = m_header.gtaccode();
+    m_gtactitle = m_header.gtactitle();
+    m_antmaskpol1 = m_header.antmaskpol1();
+    m_antmaskpol2 = m_header.antmaskpol2();
+    m_npcbaselines = m_header.npcbaselines();
+    m_nbeamspernode = m_header.nbeamspernode();
 
-  /** Calculate size of buffer. **/
-  long BLKSIZE = (long)FRBBLKSAMPS * (long)m_nf;
-  long BUFSIZE = BLKSIZE * (long)FRBMAXBLKS * (long)m_nbeamspernode;
-  long FRBSHMSIZE = sizeof(BeamBufferType) + BUFSIZE;
+    /** Calculate size of buffer. **/
+    long BLKSIZE = (long)FRBBLKSAMPS * (long)m_nf;
+    long BUFSIZE = BLKSIZE * (long)FRBMAXBLKS * (long)m_nbeamspernode;
+    long FRBSHMSIZE = sizeof(BeamBufferType) + BUFSIZE;
 
-  /** Attach to buffer. **/
-  m_bufid = shmget(FRBBUFKEY, FRBSHMSIZE, SHM_RDONLY);
-  if (m_bufid < 0)
-    throw std::runtime_error(
-        "Could not obtain buffer shared memory ID. Exiting...");
-  m_bufptr = (BeamBufferType *)shmat(m_bufid, NULL, SHM_RDONLY);
-  if ((void *)m_bufptr == (void *)-1)
-    throw std::runtime_error(
-        "Could not attach to buffer shared memory. Exiting...");
-  m_dataptr = ((unsigned char *)m_bufptr) + sizeof(BeamBufferType);
+    /** Attach to buffer. **/
+    m_bufid = shmget(FRBBUFKEY, FRBSHMSIZE, SHM_RDONLY);
+    if (m_bufid < 0)
+      throw std::runtime_error(
+          "Could not obtain buffer shared memory ID. Exiting...");
+    m_bufptr = (BeamBufferType *)shmat(m_bufid, NULL, SHM_RDONLY);
+    if ((void *)m_bufptr == (void *)-1)
+      throw std::runtime_error(
+          "Could not attach to buffer shared memory. Exiting...");
+    m_dataptr = ((unsigned char *)m_bufptr) + sizeof(BeamBufferType);
 
-  /** Get date and time of observation. **/
-  struct tm *lt;
-  double seconds;
-  double nanoseconds = 0;
-  struct timeval timestamp;
+    /** Get date and time of observation. **/
+    struct tm *lt;
+    double seconds;
+    double nanoseconds = 0;
+    struct timeval timestamp;
 
-  memcpy(&timestamp, &(m_bufptr->timestamps[currec()]), sizeof(struct timeval));
-  memcpy(&nanoseconds, &(m_bufptr->nanoseconds[currec()]), sizeof(nanoseconds));
+    memcpy(&timestamp, &(m_bufptr->timestamps[currec()]),
+           sizeof(struct timeval));
+    memcpy(&nanoseconds, &(m_bufptr->nanoseconds[currec()]),
+           sizeof(nanoseconds));
 
-  lt = localtime(&timestamp.tv_sec);
-  seconds = lt->tm_sec + (timestamp.tv_usec) / 1e6 + (nanoseconds) / 1e9;
+    lt = localtime(&timestamp.tv_sec);
+    seconds = lt->tm_sec + (timestamp.tv_usec) / 1e6 + (nanoseconds) / 1e9;
 
-  m_obsdate = sstrftime("%d/%m/%Y", lt);
-  m_obstime = sfmt("%02d:%02d:%012.9lf", lt->tm_hour, lt->tm_min, seconds);
+    m_obsdate = sstrftime("%d/%m/%Y", lt);
+    m_obstime = sfmt("%02d:%02d:%012.9lf", lt->tm_hour, lt->tm_min, seconds);
+
+    /** If everything goes well, update status. **/
+    linked = true;
+  }
 }
 
 void MFS::unlink() {
-  m_header.unlink();
-  if (shmdt(m_bufptr) == -1)
-    throw std::runtime_error(
-        "Could not detach from buffer shared memory. Exiting...");
+  if (linked) {
+    m_header.unlink();
+    if (shmdt(m_bufptr) == -1)
+      throw std::runtime_error(
+          "Could not detach from buffer shared memory. Exiting...");
+    linked = false;
+  }
 }
 
 Array MFS::getblk(int beam, int blk) {
