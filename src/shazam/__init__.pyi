@@ -1,3 +1,3 @@
-from .internals import MultiHeader, MultiFRBSHM
+from .internals import MultiFRBSHM, MultiHeader, MultiTELSHM
 
-__all__: list = ["MultiHeader", "MultiFRBSHM"]
+__all__: list = ["MultiHeader", "MultiTELSHM", "MultiFRBSHM"]
