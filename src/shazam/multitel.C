@@ -46,7 +46,8 @@ void MTS::link() {
     long int curtotalwords = cursamps * nf();
     long int currecsize = curtotalwords * WordSize / 2;
 
-    long curshmdatasize = (MaxRecs + 1) * currecsize * nbeams() + extrabuf;
+    long curshmdatasize =
+        (MaxRecs + 1) * currecsize * nbeamspernode() + extrabuf;
     curshmdatasize = curshmdatasize / PageSize + 1;
     curshmdatasize = curshmdatasize * PageSize;
 
