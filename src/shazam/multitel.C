@@ -2,6 +2,20 @@
 
 using MTS = MultiTELSHM;
 
+unsigned char *MTS::ptrtobeam(int beam) { return m_dataptr + blksize() * beam; }
+
+unsigned char *MTS::ptrtoblk(int beam, int blk) {
+  return ptrtobeam(beam) + (blksize() * nbeamspernode() * (blk % maxblks()));
+}
+
+unsigned char *MTS::ptrtotime(int beam, double t) {
+  if (t > curtime())
+    throw std::runtime_error("Data not yet written. Exiting...");
+  int blk = (int)std::floor(t / blktime());
+  int leftsamps = (int)std::round((t - blk * blktime()) / dt());
+  return ptrtoblk(beam, blk) + (long)leftsamps * (long)nf();
+}
+
 void MTS::link() {
   if (not linked) {
     /** Link the header. **/
@@ -82,6 +96,72 @@ void MTS::unlink() {
   }
 }
 
+Array MTS::getblk(int beam, int blk) {
+  if (timeofblk(blk) > curtime())
+    throw std::runtime_error("Block not yet written. Exiting...");
+  unsigned char *ptr = ptrtoblk(beam, blk);
+  unsigned char *buffer = new unsigned char[blksamps() * m_nf];
+  for (int i = 0; i < blksize(); ++i) buffer[i] = ptr[i];
+  return Array(buffer, {(size_t)blksamps(), (size_t)nf()},
+               nb::capsule(buffer, [](void *p) noexcept {
+                 delete[] (unsigned char *)p;
+               }));
+}
+
+Array MTS::getblks(int beam, int blk0, int blkN) {
+  if (timeofblk(blk0) > curtime())
+    throw std::runtime_error("First block not yet written. Exiting...");
+  if (timeofblk(blkN) > curtime())
+    throw std::runtime_error("Last block not yet written. Exiting...");
+
+  int nblks = blkN - blk0 + 1;
+  unsigned char *buffer = new unsigned char[nblks * blksamps() * m_nf];
+  for (int iblk = 0; iblk < nblks; ++iblk) {
+    unsigned char *ptr = ptrtoblk(beam, blk0 + iblk);
+    for (int i = iblk * blksize(); i < (iblk + 1) * blksize(); ++i)
+      buffer[i] = ptr[i];
+  }
+
+  return Array(buffer, {(size_t)(nblks * blksamps()), (size_t)nf()},
+               nb::capsule(buffer, [](void *p) noexcept {
+                 delete[] (unsigned char *)p;
+               }));
+}
+
+Array MTS::getslice(int beam, double tbeg, double tend) {
+  if ((tbeg > curtime()) || (tend > curtime()))
+    throw std::runtime_error("Data has not yet been written. Exiting...");
+  if (curtime() >=
+      ((unsigned int)std::floor(tbeg / blktime()) + 12) * blktime())
+    throw std::runtime_error("Data has been overwritten. Exiting...");
+
+  size_t begN = (size_t)std::round(tbeg / m_dt);
+  size_t endN = (size_t)std::round(tend / m_dt);
+  size_t N = endN - begN;
+
+  unsigned char *buffer = new unsigned char[N * m_nf];
+
+  unsigned char *ptr = ptrtotime(beam, tbeg);
+  unsigned char *endptr = ptrtotime(beam, tend);
+  int blk = (int)std::floor(tbeg / blktime());
+  unsigned char *blkptr = ptrtoblk(beam, blk) + blksize();
+
+  for (size_t i = 0;; ++i, ++ptr) {
+    if (ptr == blkptr) {
+      blk += 1;
+      ptr = ptrtoblk(beam, blk);
+      blkptr = ptrtoblk(beam, blk) + blksize();
+    }
+    if (ptr == endptr) break;
+    buffer[i] = *ptr;
+  }
+
+  return Array(buffer, {N, (size_t)m_nf},
+               nb::capsule(buffer, [](void *p) noexcept {
+                 delete[] (unsigned char *)p;
+               }));
+}
+
 void initmultitel(nb::module_ m) {
   nb::class_<MTS>(m, "MultiTELSHM")
       /** Constructor. **/
@@ -127,7 +207,22 @@ void initmultitel(nb::module_ m) {
       /** Summarise all properties as a dictionary. **/
       .def_prop_ro("header", [](MTS &x) { return x.header().asdict(); })
 
+      /** PART IV: Shared memory properties. **/
+      .def_prop_ro("maxblks", [](MTS &x) { return x.maxblks(); })
+      .def_prop_ro("blksize", [](MTS &x) { return x.blksize(); })
+      .def_prop_ro("blksamps", [](MTS &x) { return x.blksamps(); })
+      .def_prop_ro("blktime", [](MTS &x) { return x.blktime(); })
+      .def_prop_ro("curtime", [](MTS &x) { return x.curtime(); })
+      .def_prop_ro("begtime", [](MTS &x) { return x.begtime(); })
+      .def_prop_ro("endtime", [](MTS &x) { return x.endtime(); })
+      .def_prop_ro("currec", [](MTS &x) { return x.currec(); })
+      .def_prop_ro("curblk", [](MTS &x) { return x.curblk(); })
+
       /** Public methods. **/
       .def("link", &MTS::link)
-      .def("unlink", &MTS::unlink);
+      .def("unlink", &MTS::unlink)
+      .def("timeofblk", &MTS::timeofblk, "blk"_a)
+      .def("getblk", &MTS::getblk, "beam"_a, "blk"_a)
+      .def("getblks", &MTS::getblks, "beam"_a, "blk0"_a, "blkN"_a)
+      .def("getslice", &MTS::getslice, "beam"_a, "tbeg"_a, "tend"_a);
 }

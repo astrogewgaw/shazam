@@ -3,7 +3,6 @@
 
 #include <sys/time.h>
 
-#include "multifrb.h"
 #include "multihdr.h"
 
 #ifdef __cplusplus
@@ -194,9 +193,27 @@ public:
   std::vector<double> beamras() { return m_beamras; };
   std::vector<double> beamdecs() { return m_beamdecs; };
 
+  /** Shared memory parameters **/
+  int maxblks() { return MaxRecs; }
+  int blksamps() { return 32 * 25; }
+
+  unsigned int curblk() { return m_bufptr->rec[currec()].rec_seq; }
+  unsigned int currec() { return (m_bufptr->rec_ind - 1) % maxblks(); }
+
+  long blksize() { return blksamps() * nf(); }
+  long size() { return maxblks() * blksize(); }
+  double blktime() { return blksamps() * dt(); }
+  double timeofblk(int blk) { return blk * blktime(); }
+  double curtime() { return timeofblk(curblk()); }
+  double endtime() { return timeofblk(std::ceil(curblk() / maxblks())); }
+  double begtime() { return timeofblk(std::floor(curblk() / maxblks())); }
+
   /** Public methods. **/
   void link();
   void unlink();
+  Array getblk(int beam, int blk);
+  Array getblks(int beam, int blk0, int blkN);
+  Array getslice(int beam, double tbeg, double tend);
 
 private:
   /** Shared memory header. **/
@@ -246,6 +263,11 @@ private:
   BeamHeaderType *m_hdrptr;
   GlobalInfoType *m_bufptr;
   unsigned char *m_dataptr;
+
+  /** Shared memory pointers. **/
+  unsigned char *ptrtobeam(int beam);
+  unsigned char *ptrtoblk(int beam, int blk);
+  unsigned char *ptrtotime(int beam, double t);
 };
 
 void initmultitel(nb::module_ m);
