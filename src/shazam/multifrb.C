@@ -18,6 +18,9 @@ unsigned char *MFS::ptrtotime(int beam, double t) {
 
 void MFS::link() {
   if (not linked) {
+    /** Link the header. **/
+    m_header.link();
+
     /** Transfer some private variables from header instance. **/
     m_hdrid = m_header.m_hdrid;
     m_hdrptr = m_header.m_hdrptr;
@@ -214,8 +217,8 @@ void initmultifrb(nb::module_ m) {
       .def_prop_ro("beamras", [](MFS &x) { return x.beamras(); })
       .def_prop_ro("beamdecs", [](MFS &x) { return x.beamdecs(); })
 
-      .def_prop_ro("header", [](MFS &x) { return x.header(); })
-      .def_prop_ro("attrs", [](MFS &x) { return x.header().asdict(); })
+      /** Summarise all properties as a dictionary. **/
+      .def_prop_ro("header", [](MFS &x) { return x.header().asdict(); })
 
       /** PART IV: Shared memory properties. **/
       .def_prop_ro("size", [](MFS &x) { return x.size(); })

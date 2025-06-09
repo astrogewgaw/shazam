@@ -4,6 +4,9 @@ using MTS = MultiTELSHM;
 
 void MTS::link() {
   if (not linked) {
+    /** Link the header. **/
+    m_header.link();
+
     /** Transfer some private variables from header instance. **/
     m_hdrid = m_header.m_hdrid;
     m_hdrptr = m_header.m_hdrptr;
@@ -120,8 +123,8 @@ void initmultitel(nb::module_ m) {
       .def_prop_ro("beamras", [](MTS &x) { return x.beamras(); })
       .def_prop_ro("beamdecs", [](MTS &x) { return x.beamdecs(); })
 
-      .def_prop_ro("header", [](MTS &x) { return x.header(); })
-      .def_prop_ro("attrs", [](MTS &x) { return x.header().asdict(); })
+      /** Summarise all properties as a dictionary. **/
+      .def_prop_ro("header", [](MTS &x) { return x.header().asdict(); })
 
       /** Public methods. **/
       .def("link", &MTS::link)

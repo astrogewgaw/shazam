@@ -627,8 +627,19 @@ constexpr char BEAMTYPES[7][6] = {"IA",  "PA",   "VLT", "PC",
 
 class MultiHeader {
 public:
-  MultiHeader() { link(); };
-  ~MultiHeader() { unlink(); };
+  MultiHeader()
+      : m_nf(0), m_nbits(8), m_fh(0.0), m_fl(0.0), m_df(0.0), m_bw(0.0),
+        m_dt(0.0), m_mjd(0.0), m_nstokes(1), m_flipped(false), m_ra(0.0),
+        m_dec(0.0), m_source(""), m_beammode(""), m_observer(""),
+        m_gtaccode(""), m_gtactitle(""), m_antmaskpol1(0), m_antmaskpol2(0),
+        m_antspol1(std::vector<std::string>()),
+        m_antspol2(std::vector<std::string>()), m_beamid(0), m_hostid(0),
+        m_nbeams(0), m_npcbaselines(0), m_nbeamspernode(0), m_hostname(""),
+        m_beamras(std::vector<double>(0.0)),
+        m_beamdecs(std::vector<double>(0.0)), m_hdrid(0), linked(false),
+        m_hdrptr(NULL) {};
+
+  ~MultiHeader() {};
 
   /** Data parameters. **/
   int nf() { return m_nf; };
