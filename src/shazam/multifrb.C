@@ -17,9 +17,11 @@ unsigned char *MFS::ptrtotime(int beam, double t) {
 }
 
 void MFS::link() {
+  /** Transfer some private variables from header instance. **/
   m_hdrid = m_header.m_hdrid;
   m_hdrptr = m_header.m_hdrptr;
 
+  /** Transfer all metadata from the header instance. **/
   m_nf = m_header.nf();
   m_fh = m_header.fh();
   m_fl = m_header.fl();
@@ -65,19 +67,14 @@ void MFS::link() {
         "Could not attach to buffer shared memory. Exiting...");
   m_dataptr = ((unsigned char *)m_bufptr) + sizeof(BeamBufferType);
 
-  /** Get index of current record and block being written. **/
-  m_curblk = m_bufptr->curblk;
-  m_currec = (m_bufptr->empty) ? m_bufptr->currec
-                               : (m_bufptr->currec - 1) % FRBMAXBLKS;
-
   /** Get date and time of observation. **/
   struct tm *lt;
   double seconds;
   double nanoseconds = 0;
   struct timeval timestamp;
 
-  memcpy(&timestamp, &(m_bufptr->timestamps[m_currec]), sizeof(struct timeval));
-  memcpy(&nanoseconds, &(m_bufptr->nanoseconds[m_currec]), sizeof(nanoseconds));
+  memcpy(&timestamp, &(m_bufptr->timestamps[currec()]), sizeof(struct timeval));
+  memcpy(&nanoseconds, &(m_bufptr->nanoseconds[currec()]), sizeof(nanoseconds));
 
   lt = localtime(&timestamp.tv_sec);
   seconds = lt->tm_sec + (timestamp.tv_usec) / 1e6 + (nanoseconds) / 1e9;

@@ -97,16 +97,10 @@ public:
   bool empty() { return m_bufptr->empty; }
   bool status() { return m_bufptr->status; }
   bool active() { return m_bufptr->active; }
-
+  unsigned int curblk() { return m_bufptr->curblk; }
   unsigned int currec() {
-    m_currec = (m_bufptr->empty) ? m_bufptr->currec
-                                 : (m_bufptr->currec - 1) % maxblks();
-    return m_currec;
-  }
-
-  unsigned int curblk() {
-    m_curblk = m_bufptr->curblk;
-    return m_curblk;
+    return (m_bufptr->empty) ? m_bufptr->currec
+                             : (m_bufptr->currec - 1) % maxblks();
   }
 
   long blksize() { return blksamps() * m_nf; }
@@ -169,8 +163,6 @@ private:
   /** Shared memory parameters. **/
   int m_hdrid;
   int m_bufid;
-  unsigned int m_currec;
-  unsigned int m_curblk;
   BeamHeaderType *m_hdrptr;
   BeamBufferType *m_bufptr;
   unsigned char *m_dataptr;
