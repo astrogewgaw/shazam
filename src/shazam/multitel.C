@@ -100,7 +100,7 @@ Array MTS::getblk(int beam, int blk) {
   if (timeofblk(blk) > curtime())
     throw std::runtime_error("Block not yet written. Exiting...");
   unsigned char *ptr = ptrtoblk(beam, blk);
-  unsigned char *buffer = new unsigned char[blksamps() * m_nf];
+  unsigned char *buffer = new unsigned char[blksamps() * nf()];
   for (int i = 0; i < blksize(); ++i) buffer[i] = ptr[i];
   return Array(buffer, {(size_t)blksamps(), (size_t)nf()},
                nb::capsule(buffer, [](void *p) noexcept {
@@ -115,7 +115,7 @@ Array MTS::getblks(int beam, int blk0, int blkN) {
     throw std::runtime_error("Last block not yet written. Exiting...");
 
   int nblks = blkN - blk0 + 1;
-  unsigned char *buffer = new unsigned char[nblks * blksamps() * m_nf];
+  unsigned char *buffer = new unsigned char[nblks * blksamps() * nf()];
   for (int iblk = 0; iblk < nblks; ++iblk) {
     unsigned char *ptr = ptrtoblk(beam, blk0 + iblk);
     for (int i = iblk * blksize(); i < (iblk + 1) * blksize(); ++i)
@@ -132,14 +132,14 @@ Array MTS::getslice(int beam, double tbeg, double tend) {
   if ((tbeg > curtime()) || (tend > curtime()))
     throw std::runtime_error("Data has not yet been written. Exiting...");
   if (curtime() >=
-      ((unsigned int)std::floor(tbeg / blktime()) + 12) * blktime())
+      ((unsigned int)std::floor(tbeg / blktime()) + maxblks()) * blktime())
     throw std::runtime_error("Data has been overwritten. Exiting...");
 
-  size_t begN = (size_t)std::round(tbeg / m_dt);
-  size_t endN = (size_t)std::round(tend / m_dt);
+  size_t begN = (size_t)std::round(tbeg / dt());
+  size_t endN = (size_t)std::round(tend / dt());
   size_t N = endN - begN;
 
-  unsigned char *buffer = new unsigned char[N * m_nf];
+  unsigned char *buffer = new unsigned char[N * nf()];
 
   unsigned char *ptr = ptrtotime(beam, tbeg);
   unsigned char *endptr = ptrtotime(beam, tend);
@@ -156,7 +156,7 @@ Array MTS::getslice(int beam, double tbeg, double tend) {
     buffer[i] = *ptr;
   }
 
-  return Array(buffer, {N, (size_t)m_nf},
+  return Array(buffer, {N, (size_t)nf()},
                nb::capsule(buffer, [](void *p) noexcept {
                  delete[] (unsigned char *)p;
                }));
