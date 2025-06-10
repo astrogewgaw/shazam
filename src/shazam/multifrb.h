@@ -57,7 +57,7 @@ public:
         m_antspol2(std::vector<std::string>()), m_beamid(0), m_hostid(0),
         m_nbeams(0), m_npcbaselines(0), m_nbeamspernode(0), m_hostname(""),
         m_beamras(std::vector<double>(0.0)),
-        m_beamdecs(std::vector<double>(0.0)), m_hdrid(0), linked(false),
+        m_beamdecs(std::vector<double>(0.0)), m_hdrid(0), m_linked(false),
         m_hdrptr(NULL) {};
 
   ~MultiFRBSHM() {};
@@ -101,6 +101,7 @@ public:
   std::vector<double> beamdecs() { return m_beamdecs; };
 
   /** Shared memory parameters **/
+  bool linked() { return m_linked; }
   int maxblks() { return FRBMAXBLKS; }
   int blksamps() { return FRBBLKSAMPS; }
 
@@ -173,7 +174,7 @@ private:
   /** Shared memory parameters. **/
   int m_hdrid;
   int m_bufid;
-  bool linked;
+  bool m_linked;
   BeamHeaderType *m_hdrptr;
   BeamBufferType *m_bufptr;
   unsigned char *m_dataptr;

@@ -2,22 +2,30 @@
 
 using MTS = MultiTELSHM;
 
-unsigned char *MTS::ptrtobeam(int beam) { return m_dataptr + blksize() * beam; }
+unsigned char *MTS::ptrtobeam(int beam) {
+  if (m_linked) return m_dataptr + blksize() * beam;
+  throw std::runtime_error("Not linked to shared memory. Exiting...");
+}
 
 unsigned char *MTS::ptrtoblk(int beam, int blk) {
-  return ptrtobeam(beam) + (blksize() * nbeamspernode() * (blk % maxblks()));
+  if (m_linked)
+    return ptrtobeam(beam) + (blksize() * nbeamspernode() * (blk % maxblks()));
+  throw std::runtime_error("Not linked to shared memory. Exiting...");
 }
 
 unsigned char *MTS::ptrtotime(int beam, double t) {
-  if (t > curtime())
-    throw std::runtime_error("Data not yet written. Exiting...");
-  int blk = (int)std::floor(t / blktime());
-  int leftsamps = (int)std::round((t - blk * blktime()) / dt());
-  return ptrtoblk(beam, blk) + (long)leftsamps * (long)nf();
+  if (m_linked) {
+    if (t > curtime())
+      throw std::runtime_error("Data not yet written. Exiting...");
+    int blk = (int)std::floor(t / blktime());
+    int leftsamps = (int)std::round((t - blk * blktime()) / dt());
+    return ptrtoblk(beam, blk) + (long)leftsamps * (long)nf();
+  }
+  throw std::runtime_error("Not linked to shared memory. Exiting...");
 }
 
 void MTS::link() {
-  if (not linked) {
+  if (not m_linked) {
     /** Link the header. **/
     m_header.link();
 
@@ -82,84 +90,93 @@ void MTS::link() {
     m_dataptr = (unsigned char *)m_bufptr;
 
     /** If everything goes well, update status. **/
-    linked = true;
+    m_linked = true;
   }
 }
 
 void MTS::unlink() {
-  if (linked) {
+  if (m_linked) {
     m_header.unlink();
     if (shmdt(m_bufptr) == -1)
       throw std::runtime_error(
           "Could not detach from buffer shared memory. Exiting...");
-    linked = false;
+    m_linked = false;
   }
 }
 
 Array MTS::getblk(int beam, int blk) {
-  if (timeofblk(blk) > curtime())
-    throw std::runtime_error("Block not yet written. Exiting...");
-  unsigned char *ptr = ptrtoblk(beam, blk);
-  unsigned char *buffer = new unsigned char[blksamps() * nf()];
-  for (int i = 0; i < blksize(); ++i) buffer[i] = ptr[i];
-  return Array(buffer, {(size_t)blksamps(), (size_t)nf()},
-               nb::capsule(buffer, [](void *p) noexcept {
-                 delete[] (unsigned char *)p;
-               }));
+  if (m_linked) {
+    if (timeofblk(blk) > curtime())
+      throw std::runtime_error("Block not yet written. Exiting...");
+    unsigned char *ptr = ptrtoblk(beam, blk);
+    unsigned char *buffer = new unsigned char[blksamps() * nf()];
+    for (int i = 0; i < blksize(); ++i) buffer[i] = ptr[i];
+    return Array(buffer, {(size_t)blksamps(), (size_t)nf()},
+                 nb::capsule(buffer, [](void *p) noexcept {
+                   delete[] (unsigned char *)p;
+                 }));
+  }
+  throw std::runtime_error("Not linked to shared memory. Exiting...");
 }
 
 Array MTS::getblks(int beam, int blk0, int blkN) {
-  if (timeofblk(blk0) > curtime())
-    throw std::runtime_error("First block not yet written. Exiting...");
-  if (timeofblk(blkN) > curtime())
-    throw std::runtime_error("Last block not yet written. Exiting...");
+  if (m_linked) {
+    if (timeofblk(blk0) > curtime())
+      throw std::runtime_error("First block not yet written. Exiting...");
+    if (timeofblk(blkN) > curtime())
+      throw std::runtime_error("Last block not yet written. Exiting...");
 
-  int nblks = blkN - blk0 + 1;
-  unsigned char *buffer = new unsigned char[nblks * blksamps() * nf()];
-  for (int iblk = 0; iblk < nblks; ++iblk) {
-    unsigned char *ptr = ptrtoblk(beam, blk0 + iblk);
-    for (int i = iblk * blksize(); i < (iblk + 1) * blksize(); ++i)
-      buffer[i] = ptr[i];
+    int nblks = blkN - blk0 + 1;
+    unsigned char *buffer = new unsigned char[nblks * blksamps() * nf()];
+    for (int iblk = 0; iblk < nblks; ++iblk) {
+      unsigned char *ptr = ptrtoblk(beam, blk0 + iblk);
+      for (int i = iblk * blksize(); i < (iblk + 1) * blksize(); ++i)
+        buffer[i] = ptr[i];
+    }
+
+    return Array(buffer, {(size_t)(nblks * blksamps()), (size_t)nf()},
+                 nb::capsule(buffer, [](void *p) noexcept {
+                   delete[] (unsigned char *)p;
+                 }));
   }
-
-  return Array(buffer, {(size_t)(nblks * blksamps()), (size_t)nf()},
-               nb::capsule(buffer, [](void *p) noexcept {
-                 delete[] (unsigned char *)p;
-               }));
+  throw std::runtime_error("Not linked to shared memory. Exiting...");
 }
 
 Array MTS::getslice(int beam, double tbeg, double tend) {
-  if ((tbeg > curtime()) || (tend > curtime()))
-    throw std::runtime_error("Data has not yet been written. Exiting...");
-  if (curtime() >=
-      ((unsigned int)std::floor(tbeg / blktime()) + maxblks()) * blktime())
-    throw std::runtime_error("Data has been overwritten. Exiting...");
+  if (m_linked) {
+    if ((tbeg > curtime()) || (tend > curtime()))
+      throw std::runtime_error("Data has not yet been written. Exiting...");
+    if (curtime() >=
+        ((unsigned int)std::floor(tbeg / blktime()) + maxblks()) * blktime())
+      throw std::runtime_error("Data has been overwritten. Exiting...");
 
-  size_t begN = (size_t)std::round(tbeg / dt());
-  size_t endN = (size_t)std::round(tend / dt());
-  size_t N = endN - begN;
+    size_t begN = (size_t)std::round(tbeg / dt());
+    size_t endN = (size_t)std::round(tend / dt());
+    size_t N = endN - begN;
 
-  unsigned char *buffer = new unsigned char[N * nf()];
+    unsigned char *buffer = new unsigned char[N * nf()];
 
-  unsigned char *ptr = ptrtotime(beam, tbeg);
-  unsigned char *endptr = ptrtotime(beam, tend);
-  int blk = (int)std::floor(tbeg / blktime());
-  unsigned char *blkptr = ptrtoblk(beam, blk) + blksize();
+    unsigned char *ptr = ptrtotime(beam, tbeg);
+    unsigned char *endptr = ptrtotime(beam, tend);
+    int blk = (int)std::floor(tbeg / blktime());
+    unsigned char *blkptr = ptrtoblk(beam, blk) + blksize();
 
-  for (size_t i = 0;; ++i, ++ptr) {
-    if (ptr == blkptr) {
-      blk += 1;
-      ptr = ptrtoblk(beam, blk);
-      blkptr = ptrtoblk(beam, blk) + blksize();
+    for (size_t i = 0;; ++i, ++ptr) {
+      if (ptr == blkptr) {
+        blk += 1;
+        ptr = ptrtoblk(beam, blk);
+        blkptr = ptrtoblk(beam, blk) + blksize();
+      }
+      if (ptr == endptr) break;
+      buffer[i] = *ptr;
     }
-    if (ptr == endptr) break;
-    buffer[i] = *ptr;
-  }
 
-  return Array(buffer, {N, (size_t)nf()},
-               nb::capsule(buffer, [](void *p) noexcept {
-                 delete[] (unsigned char *)p;
-               }));
+    return Array(buffer, {N, (size_t)nf()},
+                 nb::capsule(buffer, [](void *p) noexcept {
+                   delete[] (unsigned char *)p;
+                 }));
+  }
+  throw std::runtime_error("Not linked to shared memory. Exiting...");
 }
 
 void initmultitel(nb::module_ m) {
@@ -208,6 +225,7 @@ void initmultitel(nb::module_ m) {
       .def_prop_ro("header", [](MTS &x) { return x.header().asdict(); })
 
       /** PART IV: Shared memory properties. **/
+      .def_prop_ro("linked", [](MTS &x) { return x.linked(); })
       .def_prop_ro("maxblks", [](MTS &x) { return x.maxblks(); })
       .def_prop_ro("blksize", [](MTS &x) { return x.blksize(); })
       .def_prop_ro("blksamps", [](MTS &x) { return x.blksamps(); })
@@ -224,5 +242,12 @@ void initmultitel(nb::module_ m) {
       .def("timeofblk", &MTS::timeofblk, "blk"_a)
       .def("getblk", &MTS::getblk, "beam"_a, "blk"_a)
       .def("getblks", &MTS::getblks, "beam"_a, "blk0"_a, "blkN"_a)
-      .def("getslice", &MTS::getslice, "beam"_a, "tbeg"_a, "tend"_a);
+      .def("getslice", &MTS::getslice, "beam"_a, "tbeg"_a, "tend"_a)
+
+      /** Dunder methods. **/
+      .def("__exit__", [](MTS &x, nb::args _) { x.unlink(); })
+      .def("__enter__", [](MTS &x) {
+        x.link();
+        return x;
+      });
 }

@@ -3,7 +3,7 @@
 using MH = MultiHeader;
 
 void MH::link() {
-  if (not linked) {
+  if (not m_linked) {
     /** Attach to header. **/
     m_hdrid = shmget(MULTIHDRKEY, sizeof(BeamHeaderType), SHM_RDONLY);
     if (m_hdrid < 0)
@@ -69,16 +69,16 @@ void MH::link() {
     }
 
     /** If everything goes well, update status. **/
-    linked = true;
+    m_linked = true;
   }
 }
 
 void MH::unlink() {
-  if (linked) {
+  if (m_linked) {
     if (shmdt(m_hdrptr) == -1)
       throw std::runtime_error(
           "Could not detach from header shared memory. Exiting...");
-    linked = false;
+    m_linked = false;
   }
 }
 
@@ -155,8 +155,18 @@ void initmultihdr(nb::module_ m) {
       .def_prop_ro("beamras", [](MH &x) { return x.beamras(); })
       .def_prop_ro("beamdecs", [](MH &x) { return x.beamdecs(); })
 
+      /** PART IV: Shared memory properties. **/
+      .def_prop_ro("linked", [](MH &x) { return x.linked(); })
+
       /** Public methods. **/
       .def("link", &MH::link)
       .def("unlink", &MH::unlink)
-      .def("asdict", &MH::asdict);
+      .def("asdict", &MH::asdict)
+
+      /** Dunder methods. **/
+      .def("__exit__", [](MH &x, nb::args _) { x.unlink(); })
+      .def("__enter__", [](MH &x) {
+        x.link();
+        return x;
+      });
 }
