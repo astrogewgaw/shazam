@@ -236,18 +236,19 @@ void initmultitel(nb::module_ m) {
       .def_prop_ro("currec", [](MTS &x) { return x.currec(); })
       .def_prop_ro("curblk", [](MTS &x) { return x.curblk(); })
 
+      /** Dunder methods. **/
+      .def("__exit__", [](MTS &x, nb::args _) { x.unlink(); })
+      .def("__enter__",
+           [](MTS &x) {
+             x.link();
+             return x;
+           })
+
       /** Public methods. **/
       .def("link", &MTS::link)
       .def("unlink", &MTS::unlink)
       .def("timeofblk", &MTS::timeofblk, "blk"_a)
       .def("getblk", &MTS::getblk, "beam"_a, "blk"_a)
       .def("getblks", &MTS::getblks, "beam"_a, "blk0"_a, "blkN"_a)
-      .def("getslice", &MTS::getslice, "beam"_a, "tbeg"_a, "tend"_a)
-
-      /** Dunder methods. **/
-      .def("__exit__", [](MTS &x, nb::args _) { x.unlink(); })
-      .def("__enter__", [](MTS &x) {
-        x.link();
-        return x;
-      });
+      .def("getslice", &MTS::getslice, "beam"_a, "tbeg"_a, "tend"_a);
 }

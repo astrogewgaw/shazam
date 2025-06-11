@@ -256,6 +256,14 @@ void initmultifrb(nb::module_ m) {
       .def_prop_ro("currec", [](MFS &x) { return x.currec(); })
       .def_prop_ro("curblk", [](MFS &x) { return x.curblk(); })
 
+      /** Dunder methods. **/
+      .def("__exit__", [](MFS &x, nb::args _) { x.unlink(); })
+      .def("__enter__",
+           [](MFS &x) {
+             x.link();
+             return x;
+           })
+
       /** Public methods. **/
       .def("link", &MFS::link)
       .def("unlink", &MFS::unlink)
@@ -263,12 +271,5 @@ void initmultifrb(nb::module_ m) {
       .def("getblk", &MFS::getblk, "beam"_a, "blk"_a)
       .def("getblks", &MFS::getblks, "beam"_a, "blk0"_a, "blkN"_a)
       .def("getslice", &MFS::getslice, "beam"_a, "tbeg"_a, "tend"_a)
-      .def("getburst", &MFS::getburst, "beam"_a, "t0"_a, "dm"_a, "width"_a)
-
-      /** Dunder methods. **/
-      .def("__exit__", [](MFS &x, nb::args _) { x.unlink(); })
-      .def("__enter__", [](MFS &x) {
-        x.link();
-        return x;
-      });
+      .def("getburst", &MFS::getburst, "beam"_a, "t0"_a, "dm"_a, "width"_a);
 }

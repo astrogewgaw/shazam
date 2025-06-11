@@ -158,15 +158,16 @@ void initmultihdr(nb::module_ m) {
       /** PART IV: Shared memory properties. **/
       .def_prop_ro("linked", [](MH &x) { return x.linked(); })
 
+      /** Dunder methods. **/
+      .def("__exit__", [](MH &x, nb::args _) { x.unlink(); })
+      .def("__enter__",
+           [](MH &x) {
+             x.link();
+             return x;
+           })
+
       /** Public methods. **/
       .def("link", &MH::link)
       .def("unlink", &MH::unlink)
-      .def("asdict", &MH::asdict)
-
-      /** Dunder methods. **/
-      .def("__exit__", [](MH &x, nb::args _) { x.unlink(); })
-      .def("__enter__", [](MH &x) {
-        x.link();
-        return x;
-      });
+      .def("asdict", &MH::asdict);
 }
