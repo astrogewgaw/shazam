@@ -14,8 +14,8 @@ readme = "README.md"
 dynamic = ["version"]
 requires-python = ">=3.10"
 license-files = ["LICENSE"]
+dependencies = [ "numpy", "typing_extensions" ]
 description = "I/O for GMRT ring buffers, with the power of SHAZAM!"
-dependencies = [ "numpy", "typing_extensions; python_version < '3.11'" ]
 authors = [{ name = "Ujjwal Panda", email = "ujjwalpanda97@gmail.com" }]
 
 [project.urls]

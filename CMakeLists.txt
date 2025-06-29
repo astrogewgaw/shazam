@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.15...3.27)
-
 project(my_ext LANGUAGES CXX)
-
 if (NOT SKBUILD)
   message(WARNING "\
   This CMake file is meant to be executed using 'scikit-build-core'.
@@ -24,31 +22,21 @@ if (NOT SKBUILD)
   the package is imported. Otherwise, you need to rerun the above
   after editing C++ files.")
 endif()
-
-find_package(Python 3.8
+find_package(Python 3.10
   REQUIRED COMPONENTS Interpreter Development.Module
   OPTIONAL_COMPONENTS Development.SABIModule)
-
 find_package(nanobind CONFIG REQUIRED)
-
 nanobind_add_module(
-  internals
-
-  # Target the stable ABI for Python 3.12+, which reduces
-  # the number of binary wheels that must be built. This
-  # does nothing on older Python versions
+  core
   STABLE_ABI
-
   src/shazam/multihdr.h
-  src/shazam/multihdr.C
+  src/shazam/multihdr.cc
   src/shazam/multitel.h
-  src/shazam/multitel.C
+  src/shazam/multitel.cc
   src/shazam/multifrb.h
-  src/shazam/multifrb.C
+  src/shazam/multifrb.cc
   src/shazam/utilities.h
-  src/shazam/utilities.C
-  src/shazam/shazam.C
+  src/shazam/utilities.cc
+  src/shazam/shazam.cc
 )
-
-# Install directive for scikit-build-core
-install(TARGETS internals LIBRARY DESTINATION shazam)
+install(TARGETS core LIBRARY DESTINATION shazam)

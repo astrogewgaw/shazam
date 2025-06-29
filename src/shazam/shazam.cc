@@ -2,7 +2,7 @@
 #include "multihdr.h"
 #include "multitel.h"
 
-NB_MODULE(internals, m) {
+NB_MODULE(core, m) {
   initmultihdr(m);
   initmultitel(m);
   initmultifrb(m);
