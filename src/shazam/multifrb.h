@@ -119,8 +119,10 @@ public:
   double blktime() { return blksamps() * m_dt; }
   double timeofblk(int blk) { return blk * blktime(); }
   double curtime() { return timeofblk(curblk()); }
-  double endtime() { return timeofblk(std::ceil(curblk() / maxblks())); }
-  double begtime() { return timeofblk(std::floor(curblk() / maxblks())); }
+  int begblk() { return (int)std::floor(curblk() / maxblks()) * maxblks(); }
+  int endblk() { return begblk() + maxblks() - 1; }
+  double begtime() { return timeofblk(begblk()); }
+  double endtime() { return timeofblk(endblk()); }
 
   /** Public methods. **/
   void link();

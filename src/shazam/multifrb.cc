@@ -163,9 +163,9 @@ Array MFS::getslice(int beam, double tbeg, double tend) {
 
     unsigned char *buffer = new unsigned char[N * nf()];
 
+    int blk = (int)std::floor(tbeg / blktime());
     unsigned char *ptr = ptrtotime(beam, tbeg);
     unsigned char *endptr = ptrtotime(beam, tend);
-    int blk = (int)std::floor(tbeg / blktime());
     unsigned char *blkptr = ptrtoblk(beam, blk) + blksize();
 
     for (size_t i = 0;; ++i, ++ptr) {
@@ -255,6 +255,8 @@ void initmultifrb(nb::module_ m) {
       .def_prop_ro("endtime", [](MFS &x) { return x.endtime(); })
       .def_prop_ro("currec", [](MFS &x) { return x.currec(); })
       .def_prop_ro("curblk", [](MFS &x) { return x.curblk(); })
+      .def_prop_ro("begblk", [](MFS &x) { return x.begblk(); })
+      .def_prop_ro("endblk", [](MFS &x) { return x.endblk(); })
 
       /** Dunder methods. **/
       .def("__exit__", [](MFS &x, nb::args _) { x.unlink(); })
