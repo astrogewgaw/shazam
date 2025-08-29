@@ -128,8 +128,11 @@ public:
   void link();
   void unlink();
   Array getblk(int beam, int blk);
+  Array getblk_unsafe(int beam, int blk);
   Array getblks(int beam, int blk0, int blkN);
+  Array getblks_unsafe(int beam, int blk0, int blkN);
   Array getslice(int beam, double tbeg, double tend);
+  Array getslice_unsafe(int beam, double tbeg, double tend);
   Array getburst(int beam, double t0, double dm, double width);
 
 private:
