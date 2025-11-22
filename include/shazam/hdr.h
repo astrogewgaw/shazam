@@ -1,5 +1,10 @@
-#ifndef MULTIHDR_H
-#define MULTIHDR_H
+#ifndef SHMRING_HDR_H
+#define SHMRING_HDR_H
+
+#include <sys/shm.h>
+
+#include <string>
+#include <vector>
 
 #ifdef __cplusplus
 extern "C" {
@@ -551,8 +556,8 @@ typedef struct {
   int recl;
   int seqnum;
   RecOffsetType off;
-  MacWordType *mac;
-  char *buf;
+  MacWordType* mac;
+  char* buf;
 } RecBufType;
 
 typedef struct {
@@ -603,43 +608,52 @@ typedef struct {
 }
 #endif
 
-#include <stdexcept>
-#include <string>
-#include <sys/shm.h>
-#include <vector>
-
-#include <nanobind/nanobind.h>
-#include <nanobind/stl/string.h>
-#include <nanobind/stl/vector.h>
-
-namespace nb = nanobind;
-using namespace nb::literals;
-
 constexpr int MULTIHDRKEY = 1050;
 
-constexpr char ANTENNAS[30][4] = {
-    "C00", "C01", "C02", "C03", "C04", "C05", "C06", "C08", "C09", "C10",
-    "C11", "C12", "C13", "C14", "E02", "E03", "E04", "E05", "E06", "S01",
-    "S02", "S03", "S04", "S06", "W01", "W02", "W03", "W04", "W05", "W06"};
+constexpr char ANTENNAS[30][4]
+    = {"C00", "C01", "C02", "C03", "C04", "C05", "C06", "C08", "C09", "C10",
+       "C11", "C12", "C13", "C14", "E02", "E03", "E04", "E05", "E06", "S01",
+       "S02", "S03", "S04", "S06", "W01", "W02", "W03", "W04", "W05", "W06"};
 
-constexpr char BEAMTYPES[7][6] = {"IA",  "PA",   "VLT", "PC",
-                                  "CDP", "PASV", "MISC"};
+constexpr char BEAMTYPES[7][6] = {"IA", "PA", "VLT", "PC", "CDP", "PASV", "MISC"};
 
-class MultiHeader {
+class Header {
 public:
-  MultiHeader()
-      : m_nf(0), m_nbits(8), m_fh(0.0), m_fl(0.0), m_df(0.0), m_bw(0.0),
-        m_dt(0.0), m_mjd(0.0), m_nstokes(1), m_flipped(false), m_ra(0.0),
-        m_dec(0.0), m_source(""), m_beammode(""), m_observer(""),
-        m_gtaccode(""), m_gtactitle(""), m_antmaskpol1(0), m_antmaskpol2(0),
+  Header()
+      : m_nf(0),
+        m_nbits(8),
+        m_fh(0.0),
+        m_fl(0.0),
+        m_df(0.0),
+        m_bw(0.0),
+        m_dt(0.0),
+        m_mjd(0.0),
+        m_nstokes(1),
+        m_flipped(false),
+        m_ra(0.0),
+        m_dec(0.0),
+        m_source(""),
+        m_beammode(""),
+        m_observer(""),
+        m_gtaccode(""),
+        m_gtactitle(""),
+        m_antmaskpol1(0),
+        m_antmaskpol2(0),
         m_antspol1(std::vector<std::string>()),
-        m_antspol2(std::vector<std::string>()), m_beamid(0), m_hostid(0),
-        m_nbeams(0), m_npcbaselines(0), m_nbeamspernode(0), m_hostname(""),
+        m_antspol2(std::vector<std::string>()),
+        m_beamid(0),
+        m_hostid(0),
+        m_nbeams(0),
+        m_npcbaselines(0),
+        m_nbeamspernode(0),
+        m_hostname(""),
         m_beamras(std::vector<double>(0.0)),
-        m_beamdecs(std::vector<double>(0.0)), m_hdrid(0), m_linked(false),
+        m_beamdecs(std::vector<double>(0.0)),
+        m_hdrid(0),
+        m_linked(false),
         m_hdrptr(NULL) {};
 
-  ~MultiHeader() {};
+  ~Header() {};
 
   /** Data parameters. **/
   int nf() { return m_nf; };
@@ -679,11 +693,11 @@ public:
   bool linked() { return m_linked; }
 
   void link();
+  void print();
   void unlink();
-  nb::dict asdict();
 
-  friend class MultiTELSHM;
-  friend class MultiFRBSHM;
+  friend class TELRing;
+  friend class FRBRing;
 
 private:
   /** Data parameters. **/
@@ -724,9 +738,7 @@ private:
   /** Shared memory parameters. **/
   int m_hdrid;
   bool m_linked;
-  BeamHeaderType *m_hdrptr;
+  BeamHeaderType* m_hdrptr;
 };
-
-void initmultihdr(nb::module_ m);
 
 #endif

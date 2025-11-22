@@ -1,9 +1,11 @@
-#ifndef MULTITEL_H
-#define MULTITEL_H
+#ifndef SHMRING_TEL_H
+#define SHMRING_TEL_H
 
-#include <sys/time.h>
+#include <sys/shm.h>
 
-#include "multihdr.h"
+#include <cmath>
+
+#include "hdr.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,13 +34,7 @@ enum {
   SimData = 1 << 15
 };
 
-enum {
-  MaxGPS = 16,
-  MaxBLK = 64,
-  MaxRecs = 8,
-  ExtraWords = 32,
-  ExtraBuf = ExtraWords * WordSize
-};
+enum { MaxGPS = 16, MaxBLK = 64, MaxRecs = 8, ExtraWords = 32, ExtraBuf = ExtraWords * WordSize };
 
 enum {
   PC2IST,
@@ -74,7 +70,7 @@ typedef struct {
   unsigned rec_flag;
   unsigned rec_seq;
   unsigned beg_off;
-  unsigned short *begp;
+  unsigned short* begp;
   double pc_time;
   double rec_time;
   struct timeval timestamp_gps;
@@ -87,7 +83,7 @@ typedef struct {
   unsigned acq_flag;
   unsigned mark_num;
   unsigned dummy;
-  void *shmp;
+  void* shmp;
   long ref_time;
   long tzoff;
   double blk_time;
@@ -108,8 +104,7 @@ enum {
   ShmKey = 1034,
   PageSize = 4096,
   ShmDataOff = ((sizeof(GlobalInfoType) + ExtraBuf) / PageSize + 1) * PageSize,
-  ShmDataSize =
-      (((MaxRecs + 1) * RecSize + ExtraBuf) / PageSize + 1) * PageSize,
+  ShmDataSize = (((MaxRecs + 1) * RecSize + ExtraBuf) / PageSize + 1) * PageSize,
   ShmSize = ShmDataOff + ShmDataSize
 };
 
@@ -121,41 +116,48 @@ enum {
 }
 #endif
 
-#include <cstring>
-#include <ctime>
-#include <stdexcept>
-#include <string>
-#include <sys/shm.h>
-#include <sys/time.h>
-#include <vector>
-
-#include <nanobind/nanobind.h>
-#include <nanobind/ndarray.h>
-#include <nanobind/stl/string.h>
-#include <nanobind/stl/vector.h>
-
-namespace nb = nanobind;
-using namespace nb::literals;
-using Array = nb::ndarray<nb::numpy, unsigned char, nb::ndim<2>>;
-
-class MultiTELSHM {
+class TELRing {
 public:
-  MultiTELSHM()
-      : m_header(), m_nf(0), m_nbits(8), m_fh(0.0), m_fl(0.0), m_df(0.0),
-        m_bw(0.0), m_dt(0.0), m_mjd(0.0), m_nstokes(1), m_flipped(false),
-        m_ra(0.0), m_dec(0.0), m_obsdate(""), m_obstime(""), m_source(""),
-        m_beammode(""), m_observer(""), m_gtaccode(""), m_gtactitle(""),
-        m_antmaskpol1(0), m_antmaskpol2(0),
+  TELRing()
+      : m_header(),
+        m_nf(0),
+        m_nbits(8),
+        m_fh(0.0),
+        m_fl(0.0),
+        m_df(0.0),
+        m_bw(0.0),
+        m_dt(0.0),
+        m_mjd(0.0),
+        m_nstokes(1),
+        m_flipped(false),
+        m_ra(0.0),
+        m_dec(0.0),
+        m_obsdate(""),
+        m_obstime(""),
+        m_source(""),
+        m_beammode(""),
+        m_observer(""),
+        m_gtaccode(""),
+        m_gtactitle(""),
+        m_antmaskpol1(0),
+        m_antmaskpol2(0),
         m_antspol1(std::vector<std::string>()),
-        m_antspol2(std::vector<std::string>()), m_beamid(0), m_hostid(0),
-        m_nbeams(0), m_npcbaselines(0), m_nbeamspernode(0), m_hostname(""),
+        m_antspol2(std::vector<std::string>()),
+        m_beamid(0),
+        m_hostid(0),
+        m_nbeams(0),
+        m_npcbaselines(0),
+        m_nbeamspernode(0),
+        m_hostname(""),
         m_beamras(std::vector<double>(0.0)),
-        m_beamdecs(std::vector<double>(0.0)), m_hdrid(0), m_linked(false),
+        m_beamdecs(std::vector<double>(0.0)),
+        m_hdrid(0),
+        m_linked(false),
         m_hdrptr(NULL) {};
 
-  ~MultiTELSHM() {};
+  ~TELRing() {};
 
-  MultiHeader header() { return m_header; }
+  Header header() { return m_header; }
 
   /** Data parameters. **/
   int nf() { return m_nf; };
@@ -212,13 +214,16 @@ public:
   /** Public methods. **/
   void link();
   void unlink();
-  Array getblk(int beam, int blk);
-  Array getblks(int beam, int blk0, int blkN);
-  Array getslice(int beam, double tbeg, double tend);
+  std::tuple<unsigned char*, size_t> getblk(int beam, int blk);
+  std::tuple<unsigned char*, size_t> getblk_unsafe(int beam, int blk);
+  std::tuple<unsigned char*, size_t> getblks(int beam, int blk0, int blkN);
+  std::tuple<unsigned char*, size_t> getblks_unsafe(int beam, int blk0, int blkN);
+  std::tuple<unsigned char*, size_t> getslice(int beam, double tbeg, double tend);
+  std::tuple<unsigned char*, size_t> getslice_unsafe(int beam, double tbeg, double tend);
 
 private:
   /** Shared memory header. **/
-  MultiHeader m_header;
+  Header m_header;
 
   /** Data parameters. **/
   int m_nf;
@@ -261,16 +266,14 @@ private:
   int m_hdrid;
   int m_bufid;
   bool m_linked;
-  BeamHeaderType *m_hdrptr;
-  GlobalInfoType *m_bufptr;
-  unsigned char *m_dataptr;
+  BeamHeaderType* m_hdrptr;
+  GlobalInfoType* m_bufptr;
+  unsigned char* m_dataptr;
 
   /** Shared memory pointers. **/
-  unsigned char *ptrtobeam(int beam);
-  unsigned char *ptrtoblk(int beam, int blk);
-  unsigned char *ptrtotime(int beam, double t);
+  unsigned char* ptrtobeam(int beam);
+  unsigned char* ptrtoblk(int beam, int blk);
+  unsigned char* ptrtotime(int beam, double t);
 };
-
-void initmultitel(nb::module_ m);
 
 #endif

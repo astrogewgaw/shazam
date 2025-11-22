@@ -1,32 +1,18 @@
-#ifndef MULTIFRB_H
-#define MULTIFRB_H
+#ifndef SHMRING_FRB_H
+#define SHMRING_FRB_H
+
+#include <sys/shm.h>
 
 #include <cmath>
-#include <cstring>
-#include <ctime>
-#include <memory>
-#include <stdexcept>
 #include <string>
-#include <sys/shm.h>
-#include <sys/time.h>
-#include <vector>
+#include <tuple>
 
-#include <nanobind/nanobind.h>
-#include <nanobind/ndarray.h>
-#include <nanobind/stl/string.h>
-#include <nanobind/stl/vector.h>
+#include "hdr.h"
 
-#include "multihdr.h"
-#include "utilities.h"
-
-namespace nb = nanobind;
-using namespace nb::literals;
-using Array = nb::ndarray<nb::numpy, unsigned char, nb::ndim<2>>;
-
-constexpr int FFTSAMPS = 800;
+constexpr int FRBFFTSAMPS = 800;
 constexpr int FRBMAXBLKS = 12;
 constexpr int FRBBUFKEY = 2032;
-constexpr long FRBBLKSAMPS = FFTSAMPS * 32;
+constexpr long FRBBLKSAMPS = FRBFFTSAMPS * 32;
 
 typedef struct {
   unsigned int active;
@@ -45,24 +31,48 @@ typedef struct {
   int overflow;
 } BeamBufferType;
 
-class MultiFRBSHM {
+class FRBRing {
 public:
-  MultiFRBSHM()
-      : m_header(), m_nf(0), m_nbits(8), m_fh(0.0), m_fl(0.0), m_df(0.0),
-        m_bw(0.0), m_dt(0.0), m_mjd(0.0), m_nstokes(1), m_flipped(false),
-        m_ra(0.0), m_dec(0.0), m_obsdate(""), m_obstime(""), m_source(""),
-        m_beammode(""), m_observer(""), m_gtaccode(""), m_gtactitle(""),
-        m_antmaskpol1(0), m_antmaskpol2(0),
+  FRBRing()
+      : m_hdr(),
+        m_nf(0),
+        m_nbits(8),
+        m_fh(0.0),
+        m_fl(0.0),
+        m_df(0.0),
+        m_bw(0.0),
+        m_dt(0.0),
+        m_mjd(0.0),
+        m_nstokes(1),
+        m_flipped(false),
+        m_ra(0.0),
+        m_dec(0.0),
+        m_obsdate(""),
+        m_obstime(""),
+        m_source(""),
+        m_beammode(""),
+        m_observer(""),
+        m_gtaccode(""),
+        m_gtactitle(""),
+        m_antmaskpol1(0),
+        m_antmaskpol2(0),
         m_antspol1(std::vector<std::string>()),
-        m_antspol2(std::vector<std::string>()), m_beamid(0), m_hostid(0),
-        m_nbeams(0), m_npcbaselines(0), m_nbeamspernode(0), m_hostname(""),
+        m_antspol2(std::vector<std::string>()),
+        m_beamid(0),
+        m_hostid(0),
+        m_nbeams(0),
+        m_npcbaselines(0),
+        m_nbeamspernode(0),
+        m_hostname(""),
         m_beamras(std::vector<double>(0.0)),
-        m_beamdecs(std::vector<double>(0.0)), m_hdrid(0), m_linked(false),
+        m_beamdecs(std::vector<double>(0.0)),
+        m_hdrid(0),
+        m_linked(false),
         m_hdrptr(NULL) {};
 
-  ~MultiFRBSHM() {};
+  ~FRBRing() {};
 
-  MultiHeader header() { return m_header; }
+  Header hdr() { return m_hdr; }
 
   /** Data parameters. **/
   int nf() { return m_nf; };
@@ -110,8 +120,7 @@ public:
   bool active() { return m_bufptr->active; }
   unsigned int curblk() { return m_bufptr->curblk; }
   unsigned int currec() {
-    return (m_bufptr->empty) ? m_bufptr->currec
-                             : (m_bufptr->currec - 1) % maxblks();
+    return (m_bufptr->empty) ? m_bufptr->currec : (m_bufptr->currec - 1) % maxblks();
   }
 
   long blksize() { return blksamps() * m_nf; }
@@ -127,17 +136,17 @@ public:
   /** Public methods. **/
   void link();
   void unlink();
-  Array getblk(int beam, int blk);
-  Array getblk_unsafe(int beam, int blk);
-  Array getblks(int beam, int blk0, int blkN);
-  Array getblks_unsafe(int beam, int blk0, int blkN);
-  Array getslice(int beam, double tbeg, double tend);
-  Array getslice_unsafe(int beam, double tbeg, double tend);
-  Array getburst(int beam, double t0, double dm, double width);
+  std::tuple<unsigned char*, size_t> getblk(int beam, int blk);
+  std::tuple<unsigned char*, size_t> getblk_unsafe(int beam, int blk);
+  std::tuple<unsigned char*, size_t> getblks(int beam, int blk0, int blkN);
+  std::tuple<unsigned char*, size_t> getblks_unsafe(int beam, int blk0, int blkN);
+  std::tuple<unsigned char*, size_t> getslice(int beam, double tbeg, double tend);
+  std::tuple<unsigned char*, size_t> getslice_unsafe(int beam, double tbeg, double tend);
+  std::tuple<unsigned char*, size_t> getburst(int beam, double t0, double dm, double width);
 
 private:
   /** Shared memory header. **/
-  MultiHeader m_header;
+  Header m_hdr;
 
   /** Data parameters. **/
   int m_nf;
@@ -180,16 +189,14 @@ private:
   int m_hdrid;
   int m_bufid;
   bool m_linked;
-  BeamHeaderType *m_hdrptr;
-  BeamBufferType *m_bufptr;
-  unsigned char *m_dataptr;
+  BeamHeaderType* m_hdrptr;
+  BeamBufferType* m_bufptr;
+  unsigned char* m_dataptr;
 
   /** Shared memory pointers. **/
-  unsigned char *ptrtobeam(int beam);
-  unsigned char *ptrtoblk(int beam, int blk);
-  unsigned char *ptrtotime(int beam, double t);
+  unsigned char* ptrtobeam(int beam);
+  unsigned char* ptrtoblk(int beam, int blk);
+  unsigned char* ptrtotime(int beam, double t);
 };
-
-void initmultifrb(nb::module_ m);
 
 #endif
