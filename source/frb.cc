@@ -18,7 +18,7 @@ unsigned char* FRBRing::ptrtoblk(int beam, int blk) {
 
 unsigned char* FRBRing::ptrtotime(int beam, double t) {
   if (m_linked) {
-    if (t > curtime()) throw std::runtime_error("DATA NOT YET WRITTEN. ABORT.");
+    // if (t > curtime()) throw std::runtime_error("DATA NOT YET WRITTEN. ABORT.");
     int blk = (int)std::floor(t / blktime());
     int leftsamps = (int)std::round((t - blk * blktime()) / m_dt);
     return ptrtoblk(beam, blk) + (long)leftsamps * (long)m_nf;

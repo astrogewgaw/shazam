@@ -36,16 +36,17 @@ default:
 # Clean up.
 @clean:
     echo "Cleaning..."
+    rm -rf tmp
+    rm -rf dist
+    rm -rf .eggs
+    rm -rf .cache
+    rm -rf .coverage
+    rm -rf .mypy_cache
     rm -rf docs/build/*
-    fd -I tmp -x rm -rf
-    fd -I dist -x rm -rf
-    fd -I .eggs -x rm -rf
-    fd -I .cache -x rm -rf
+    rm -rf .pytest_cache
     fd -I -e pyc -x rm -rf
-    fd -I .coverage -x rm -rf
-    fd -I .mypy_cache -x rm -rf
     fd -I __pycache__ -x rm -rf
-    fd -I .pytest_cache -x rm -rf
+    rm -rf python/{{pkg}}/_version.py
 
 # Install.
 @install: && clean
