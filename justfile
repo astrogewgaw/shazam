@@ -1,12 +1,10 @@
 pkg  := "shazam"
 desc := "I/O for GMRT ring buffers, with the power of SHAZAM!"
 
-alias t := test
 alias d := docs
 alias c := clean
 alias i := install
 alias u := uninstall
-
 
 # List available commands.
 default:
@@ -21,12 +19,10 @@ default:
     grid.add_column(justify="left", style="bold")
     grid.add_column(justify="right", style="italic")
 
-    grid.add_row("loc ([i]l[/i])", "Chart LOCs")
     grid.add_row("clean ([i]c[/i])", "Clean up")
-    grid.add_row("test ([i]t[/i])", "Run tests")
     grid.add_row("install ([i]i[/i])", "Install")
-    grid.add_row("uninstall ([i]u[/i])", "Uninstall")
     grid.add_row("docs ([i]d[/i])", "Build docs.")
+    grid.add_row("uninstall ([i]u[/i])", "Uninstall")
 
     console.print(
         Panel(
@@ -40,19 +36,16 @@ default:
 # Clean up.
 @clean:
     echo "Cleaning..."
-    rm -rf tmp
-    rm -rf dist
-    rm -rf .eggs
-    rm -rf .coverage
-    rm -rf .mypy_cache
     rm -rf docs/build/*
-    rm -rf .pytest_cache
+    fd -I tmp -x rm -rf
+    fd -I dist -x rm -rf
+    fd -I .eggs -x rm -rf
+    fd -I .cache -x rm -rf
     fd -I -e pyc -x rm -rf
+    fd -I .coverage -x rm -rf
+    fd -I .mypy_cache -x rm -rf
     fd -I __pycache__ -x rm -rf
-
-# Run tests.
-@test: && clean
-  pytest -vv tests
+    fd -I .pytest_cache -x rm -rf
 
 # Install.
 @install: && clean
@@ -63,8 +56,8 @@ default:
 @uninstall: && clean
     echo "Uninstalling {{pkg}}..."
     pip uninstall {{pkg}}
-    rm -rf src/{{pkg}}.egg-info
-    rm -rf src/{{pkg}}/_version.py
+    rm -rf python/{{pkg}}.egg-info
+    rm -rf python/{{pkg}}/_version.py
 
 # Build docs.
 @docs:
