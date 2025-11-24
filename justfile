@@ -3,35 +3,13 @@ desc := "I/O for GMRT ring buffers, with the power of SHAZAM!"
 
 alias d := docs
 alias c := clean
+alias b := build
 alias i := install
 alias u := uninstall
 
 # List available commands.
 default:
-    #!/usr/bin/env python
-    from rich.table import Table
-    from rich.panel import Panel
-    from rich.console import Console
-
-    console = Console()
-
-    grid = Table.grid(expand=True, padding=(0, 2, 0, 2))
-    grid.add_column(justify="left", style="bold")
-    grid.add_column(justify="right", style="italic")
-
-    grid.add_row("clean ([i]c[/i])", "Clean up")
-    grid.add_row("install ([i]i[/i])", "Install")
-    grid.add_row("docs ([i]d[/i])", "Build docs.")
-    grid.add_row("uninstall ([i]u[/i])", "Uninstall")
-
-    console.print(
-        Panel(
-            grid,
-            padding=2,
-            expand=False,
-            title="[b]{{pkg}}[/b]: [i]{{desc}}[/i]",
-        )
-    )
+  @just --choose
 
 # Clean up.
 @clean:
@@ -46,7 +24,14 @@ default:
     rm -rf .pytest_cache
     fd -I -e pyc -x rm -rf
     fd -I __pycache__ -x rm -rf
-    rm -rf python/{{pkg}}/_version.py
+
+# Build
+@build:
+  echo "Building..."
+  rm -rf build
+  mkdir -p build
+  cd build && cmake .. && make -j`nproc`
+  cd ..
 
 # Install.
 @install: && clean
@@ -57,6 +42,7 @@ default:
 @uninstall: && clean
     echo "Uninstalling {{pkg}}..."
     pip uninstall {{pkg}}
+    rm -rf build
     rm -rf python/{{pkg}}.egg-info
     rm -rf python/{{pkg}}/_version.py
 

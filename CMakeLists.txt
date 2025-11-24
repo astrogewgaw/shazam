@@ -7,11 +7,12 @@ project(
   DESCRIPTION "I/O for GMRT ring buffers, with the power of SHAZAM!"
 )
 
-include(cmake/CPM.cmake)
-include(cmake/LTO.cmake)
-include(cmake/Misc.cmake)
-include(cmake/Colors.cmake)
-include(cmake/ConfigSafeGuards.cmake)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+include(CPM)
+include(LTO)
+include(Misc)
+include(Colors)
+include(ConfigSafeGuards)
 
 find_lto(CXX)
 
