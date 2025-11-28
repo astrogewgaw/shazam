@@ -1,14 +1,38 @@
 #include "../include/shazam/hdr.h"
 
+#include <cstring>
 #include <stdexcept>
 
-void Header::link() {
-  if (not m_linked) {
-    /** Attach to header. **/
-    m_hdrid = shmget(MULTIHDRKEY, sizeof(BeamHeaderType), SHM_RDONLY);
-    if (m_hdrid < 0) throw std::runtime_error("UNABLE TO GET HDR SHM ID. ABORT.");
-    m_hdrptr = (BeamHeaderType*)shmat(m_hdrid, NULL, SHM_RDONLY);
-    if ((void*)m_hdrptr == (void*)-1) throw std::runtime_error("FAILED TO LINK TO HDR SHM. ABORT");
+namespace shazam {
+  void Header::open(MODE mode) {
+    if (not m_opened) {
+      switch (mode) {
+        case READ:
+          m_mode = mode;
+          /** Attach to header. **/
+          m_hdrid = shmget(MULTIHDRKEY, sizeof(BeamHeaderType), SHM_RDONLY);
+          if (m_hdrid < 0) throw std::runtime_error("UNABLE TO GET HDR SHM ID. ABORT.");
+          m_hdrptr = (BeamHeaderType*)shmat(m_hdrid, NULL, SHM_RDONLY);
+          if ((void*)m_hdrptr == (void*)-1)
+            throw std::runtime_error("FAILED TO LINK TO HDR SHM. ABORT");
+          break;
+        case WRITE:
+          m_mode = mode;
+          /** Create (empty) header. **/
+          m_hdrid = shmget(MULTIHDRKEY, sizeof(BeamHeaderType), IPC_CREAT | 0666);
+          if (m_hdrid < 0) throw std::runtime_error("UNABLE TO GET HDR SHM ID. ABORT.");
+          m_hdrptr = (BeamHeaderType*)shmat(m_hdrid, NULL, 0);
+          if ((void*)m_hdrptr == (void*)-1)
+            throw std::runtime_error("FAILED TO CREATE HDR SHM. ABORT");
+          break;
+      }
+      /** If everything goes well, update status. **/
+      m_opened = true;
+    }
+  }
+
+  void Header::read() {
+    open(READ);
 
     /** Read in all header parameters... **/
     ScanInfoType* scan = &(m_hdrptr->ScanTab[0]);
@@ -62,15 +86,77 @@ void Header::link() {
       m_beamras.push_back(m_hdrptr->BeamGenHdr.BeamSteeringParams.RA[b]);
       m_beamdecs.push_back(m_hdrptr->BeamGenHdr.BeamSteeringParams.DEC[b]);
     }
-
-    /** If everything goes well, update status. **/
-    m_linked = true;
   }
-}
 
-void Header::unlink() {
-  if (m_linked) {
-    if (shmdt(m_hdrptr) == -1) throw std::runtime_error("FAILED TO UNLINK FROM HDR SHM. ABORT.");
-    m_linked = false;
+  void Header::write() {
+    open(WRITE);
+
+    ScanInfoType* scan = &(m_hdrptr->ScanTab[0]);
+
+    /** Set some beam and host parameters early. **/
+    m_hdrptr->BeamGenHdr.BeamHostID = m_beamid;
+    m_hdrptr->BeamGenHdr.BeamHostID = m_hostid;
+    strcpy(m_hdrptr->BeamGenHdr.BeamHostName, m_hostname.c_str());
+
+    /** Set data parameters. **/
+    scan->source.freq[0] = m_fh * 1e6;
+    m_hdrptr->corr.corrpar.channels = m_flipped ? m_fl : m_nf;
+    m_hdrptr->corr.daspar.gsb_final_bw = 1;
+    m_hdrptr->BeamGenHdr.PostTimeInt[0] = 1;
+    m_hdrptr->BeamGenHdr.PostFreqInt[0] = 1;
+    m_hdrptr->corr.daspar.gsb_acq_bw = m_bw;
+    m_hdrptr->corr.corrpar.f_step = m_df * 1e6;
+    scan->source.net_sign[0] = m_flipped ? -1 : 1;
+    m_hdrptr->corr.corrpar.clock = 2.0 * m_bw * 1e6;
+    m_hdrptr->BeamGenHdr.SampInterval
+        = m_dt * m_hdrptr->corr.corrpar.clock / m_hdrptr->corr.daspar.gsb_final_bw;
+
+    /** Set observation parameters. **/
+    scan->source.ra_app = m_ra;
+    scan->source.dec_app = m_dec;
+    strcpy(scan->proj.code, m_gtaccode.c_str());
+    strcpy(scan->source.object, m_source.c_str());
+    strcpy(scan->proj.title, m_gtactitle.c_str());
+    strcpy(scan->proj.observer, m_observer.c_str());
+    m_hdrptr->BeamGenHdr.NStokes[m_beamid] = m_nstokes;
+    if (m_beammode == "IA") {
+      m_hdrptr->BeamGenHdr.BeamType[m_beamid] = 0;
+    } else if (m_beammode == "PA") {
+      m_hdrptr->BeamGenHdr.BeamType[m_beamid] = 1;
+    } else if (m_beammode == "VLT") {
+      m_hdrptr->BeamGenHdr.BeamType[m_beamid] = 2;
+    } else if (m_beammode == "PC") {
+      m_hdrptr->BeamGenHdr.BeamType[m_beamid] = 3;
+    } else if (m_beammode == "CDP") {
+      m_hdrptr->BeamGenHdr.BeamType[m_beamid] = 4;
+    } else if (m_beammode == "PASV") {
+      m_hdrptr->BeamGenHdr.BeamType[m_beamid] = 5;
+    } else if (m_beammode == "MISC") {
+      m_hdrptr->BeamGenHdr.BeamType[m_beamid] = 6;
+    }
+
+    /** Set antenna masks and antennas. **/
+    unsigned int refantmask = 1;
+    m_hdrptr->BeamGenHdr.GAC_maskP1 = m_antmaskpol1;
+    m_hdrptr->BeamGenHdr.GAC_maskP2 = m_antmaskpol2;
+
+    /** Set beam steering parameters. **/
+    m_hdrptr->BeamGenHdr.BeamSteeringParams.nSteeringBeams = m_nbeams;
+    m_hdrptr->BeamGenHdr.BeamSteeringParams.nPCBaselines = m_npcbaselines;
+    m_hdrptr->BeamGenHdr.BeamSteeringParams.nSteeringBeamsPerNode = m_nbeamspernode;
+
+    /** Get beam RA and DEC values. **/
+    for (int i = 0; i < m_nbeamspernode; i++) {
+      int b = m_beamid * m_nbeamspernode + i;
+      m_hdrptr->BeamGenHdr.BeamSteeringParams.RA[b] = m_beamras[i];
+      m_hdrptr->BeamGenHdr.BeamSteeringParams.DEC[b] = m_beamdecs[i];
+    }
   }
-}
+
+  void Header::close() {
+    if (m_opened) {
+      if (shmdt(m_hdrptr) == -1) throw std::runtime_error("FAILED TO UNLINK FROM HDR SHM. ABORT.");
+      m_opened = false;
+    }
+  }
+}  // namespace shazam
