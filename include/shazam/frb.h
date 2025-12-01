@@ -1,12 +1,13 @@
-#ifndef SHMRING_FRB_H
-#define SHMRING_FRB_H
+#ifndef SHAZAM_FRB_H
+#define SHAZAM_FRB_H
 
-#include <shazam/hdr.h>
 #include <sys/shm.h>
 
 #include <cmath>
 #include <string>
 #include <tuple>
+
+#include "hdr.h"
 
 namespace shazam {
   constexpr int FRBFFTSAMPS = 800;
@@ -73,6 +74,8 @@ namespace shazam {
     ~FRBRing() {};
 
     Header hdr() { return m_hdr; }
+
+    MODE mode() { return m_mode; };
 
     /** Data parameters. **/
     int nf() { return m_nf; };

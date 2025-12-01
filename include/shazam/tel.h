@@ -1,10 +1,13 @@
 #ifndef SHAZAM_TEL_H
 #define SHAZAM_TEL_H
 
-#include <shazam/hdr.h>
 #include <sys/shm.h>
 
 #include <cmath>
+#include <string>
+#include <tuple>
+
+#include "hdr.h"
 
 namespace shazam {
 #ifdef __cplusplus
@@ -158,6 +161,8 @@ namespace shazam {
     ~TELRing() {};
 
     Header header() { return m_header; }
+
+    MODE mode() { return m_mode; };
 
     /** Data parameters. **/
     int nf() { return m_nf; };

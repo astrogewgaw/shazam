@@ -1,4 +1,4 @@
-#include <shazam/frb.h>
+#include "../include/shazam/frb.h"
 
 #include <cstring>
 #include <stdexcept>

@@ -3,10 +3,13 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 
+#include <stdexcept>
+
 #include "../../include/shazam/frb.h"
 #include "../../include/shazam/hdr.h"
 #include "../../include/shazam/tel.h"
 
+using namespace shazam;
 namespace nb = nanobind;
 using namespace nb::literals;
 using Array = nb::ndarray<nb::numpy, unsigned char, nb::ndim<2>>;
@@ -52,19 +55,34 @@ NB_MODULE(core, m) {
       .def_prop_ro("beamdecs", [](Header& x) { return x.beamdecs(); })
 
       /** PART IV: Shared memory properties. **/
-      .def_prop_ro("linked", [](Header& x) { return x.linked(); })
+      .def_prop_ro("opened", [](Header& x) { return x.opened(); })
 
       /** Dunder methods. **/
-      .def("__exit__", [](Header& x, nb::args _) { x.unlink(); })
+      .def("__exit__", [](Header& x, nb::args _) { x.close(); })
       .def("__enter__",
-           [](Header& x) {
-             x.link();
+           [](Header& x, std::string mode) {
+             if (mode == "r") {
+               x.open(READ);
+             } else if ((mode == "w") || (mode == "rw")) {
+               x.open(WRITE);
+             } else {
+               throw std::runtime_error("MODE DOESN'T EXIST. ABORT.");
+             }
              return x;
            })
 
       /** Public methods. **/
-      .def("link", &Header::link)
-      .def("unlink", &Header::unlink)
+      .def("open",
+           [](Header& x, std::string mode) {
+             if (mode == "r") {
+               x.open(READ);
+             } else if ((mode == "w") || (mode == "rw")) {
+               x.open(WRITE);
+             } else {
+               throw std::runtime_error("MODE DOESN'T EXIST. ABORT.");
+             }
+           })
+      .def("close", &Header::close)
       .def("asdict", [](Header& x) {
         nb::dict header;
         header["nf"] = x.nf();
@@ -103,6 +121,17 @@ NB_MODULE(core, m) {
       .def(nb::init<>())
 
       /** Class properties. **/
+      .def_prop_ro("mode",
+                   [](TELRing& x) {
+                     switch (x.mode()) {
+                       default:
+                       case READ:
+                         return "r";
+                       case WRITE:
+                         return "w";
+                     }
+                   })
+
       /** PART I: Data properties. **/
       .def_prop_ro("nf", [](TELRing& x) { return x.nf(); })
       .def_prop_ro("fh", [](TELRing& x) { return x.fh(); })
@@ -175,7 +204,7 @@ NB_MODULE(core, m) {
            })
 
       /** PART IV: Shared memory properties. **/
-      .def_prop_ro("linked", [](TELRing& x) { return x.linked(); })
+      .def_prop_ro("opened", [](TELRing& x) { return x.opened(); })
       .def_prop_ro("maxblks", [](TELRing& x) { return x.maxblks(); })
       .def_prop_ro("blksize", [](TELRing& x) { return x.blksize(); })
       .def_prop_ro("blksamps", [](TELRing& x) { return x.blksamps(); })
@@ -187,27 +216,32 @@ NB_MODULE(core, m) {
       .def_prop_ro("curblk", [](TELRing& x) { return x.curblk(); })
 
       /** Dunder methods. **/
-      .def("__exit__", [](TELRing& x, nb::args _) { x.unlink(); })
+      .def("__exit__", [](TELRing& x, nb::args _) { x.close(); })
       .def("__enter__",
-           [](TELRing& x) {
-             x.link();
+           [](TELRing& x, std::string mode) {
+             if (mode == "r") {
+               x.open(READ);
+             } else if ((mode == "w") || (mode == "rw")) {
+               x.open(WRITE);
+             } else {
+               throw std::runtime_error("MODE DOESN'T EXIST. ABORT.");
+             }
              return x;
            })
 
       /** Public methods. **/
-      .def("link", &TELRing::link)
-      .def("unlink", &TELRing::unlink)
+      .def("open",
+           [](TELRing& x, std::string mode) {
+             if (mode == "r") {
+               x.open(READ);
+             } else if ((mode == "w") || (mode == "rw")) {
+               x.open(WRITE);
+             } else {
+               throw std::runtime_error("MODE DOESN'T EXIST. ABORT.");
+             }
+           })
+      .def("close", &TELRing::close)
       .def("timeofblk", &TELRing::timeofblk, "blk"_a)
-      .def(
-          "getblk_unsafe",
-          [](TELRing& x, int beam, int blk) {
-            auto [buffer, size] = x.getblk_unsafe(beam, blk);
-            size_t nf = x.nf();
-            size_t nt = (size_t)(size / nf);
-            return Array(buffer, {nt, nf},
-                         nb::capsule(buffer, [](void* p) noexcept { delete[] (unsigned char*)p; }));
-          },
-          "beam"_a, "blk"_a)
       .def(
           "getblk",
           [](TELRing& x, int beam, int blk) {
@@ -219,16 +253,6 @@ NB_MODULE(core, m) {
           },
           "beam"_a, "blk"_a)
       .def(
-          "getblks_unsafe",
-          [](TELRing& x, int beam, int blk0, int blkN) {
-            auto [buffer, size] = x.getblks_unsafe(beam, blk0, blkN);
-            size_t nf = x.nf();
-            size_t nt = (size_t)(size / nf);
-            return Array(buffer, {nt, nf},
-                         nb::capsule(buffer, [](void* p) noexcept { delete[] (unsigned char*)p; }));
-          },
-          "beam"_a, "blk0"_a, "blkN"_a)
-      .def(
           "getblks",
           [](TELRing& x, int beam, int blk0, int blkN) {
             auto [buffer, size] = x.getblks(beam, blk0, blkN);
@@ -238,16 +262,6 @@ NB_MODULE(core, m) {
                          nb::capsule(buffer, [](void* p) noexcept { delete[] (unsigned char*)p; }));
           },
           "beam"_a, "blk0"_a, "blkN"_a)
-      .def(
-          "getslice_unsafe",
-          [](TELRing& x, int beam, double tbeg, double tend) {
-            auto [buffer, size] = x.getslice_unsafe(beam, tbeg, tend);
-            size_t nf = x.nf();
-            size_t nt = (size_t)(size / nf);
-            return Array(buffer, {nt, nf},
-                         nb::capsule(buffer, [](void* p) noexcept { delete[] (unsigned char*)p; }));
-          },
-          "beam"_a, "tbeg"_a, "tend"_a)
       .def(
           "getslice",
           [](TELRing& x, int beam, double tbeg, double tend) {
@@ -264,6 +278,17 @@ NB_MODULE(core, m) {
       .def(nb::init<>())
 
       /** Class properties. **/
+      .def_prop_ro("mode",
+                   [](FRBRing& x) {
+                     switch (x.mode()) {
+                       default:
+                       case READ:
+                         return "r";
+                       case WRITE:
+                         return "w";
+                     }
+                   })
+
       /** PART I: Data properties. **/
       .def_prop_ro("nf", [](FRBRing& x) { return x.nf(); })
       .def_prop_ro("fh", [](FRBRing& x) { return x.fh(); })
@@ -339,7 +364,7 @@ NB_MODULE(core, m) {
       /** PART IV: Shared memory properties. **/
       .def_prop_ro("size", [](FRBRing& x) { return x.size(); })
       .def_prop_ro("empty", [](FRBRing& x) { return x.empty(); })
-      .def_prop_ro("linked", [](FRBRing& x) { return x.linked(); })
+      .def_prop_ro("opened", [](FRBRing& x) { return x.opened(); })
       .def_prop_ro("status", [](FRBRing& x) { return x.status(); })
       .def_prop_ro("active", [](FRBRing& x) { return x.active(); })
       .def_prop_ro("maxblks", [](FRBRing& x) { return x.maxblks(); })
@@ -355,27 +380,32 @@ NB_MODULE(core, m) {
       .def_prop_ro("endblk", [](FRBRing& x) { return x.endblk(); })
 
       /** Dunder methods. **/
-      .def("__exit__", [](FRBRing& x, nb::args _) { x.unlink(); })
+      .def("__exit__", [](FRBRing& x, nb::args _) { x.close(); })
       .def("__enter__",
-           [](FRBRing& x) {
-             x.link();
+           [](FRBRing& x, std::string mode) {
+             if (mode == "r") {
+               x.open(READ);
+             } else if ((mode == "w") || (mode == "rw")) {
+               x.open(WRITE);
+             } else {
+               throw std::runtime_error("MODE DOESN'T EXIST. ABORT.");
+             }
              return x;
            })
 
       /** Public methods. **/
-      .def("link", &FRBRing::link)
-      .def("unlink", &FRBRing::unlink)
+      .def("open",
+           [](FRBRing& x, std::string mode) {
+             if (mode == "r") {
+               x.open(READ);
+             } else if ((mode == "w") || (mode == "rw")) {
+               x.open(WRITE);
+             } else {
+               throw std::runtime_error("MODE DOESN'T EXIST. ABORT.");
+             }
+           })
+      .def("close", &FRBRing::close)
       .def("timeofblk", &FRBRing::timeofblk, "blk"_a)
-      .def(
-          "getblk_unsafe",
-          [](FRBRing& x, int beam, int blk) {
-            auto [buffer, size] = x.getblk_unsafe(beam, blk);
-            size_t nf = x.nf();
-            size_t nt = (size_t)(size / nf);
-            return Array(buffer, {nt, nf},
-                         nb::capsule(buffer, [](void* p) noexcept { delete[] (unsigned char*)p; }));
-          },
-          "beam"_a, "blk"_a)
       .def(
           "getblk",
           [](FRBRing& x, int beam, int blk) {
@@ -387,16 +417,6 @@ NB_MODULE(core, m) {
           },
           "beam"_a, "blk"_a)
       .def(
-          "getblks_unsafe",
-          [](FRBRing& x, int beam, int blk0, int blkN) {
-            auto [buffer, size] = x.getblks_unsafe(beam, blk0, blkN);
-            size_t nf = x.nf();
-            size_t nt = (size_t)(size / nf);
-            return Array(buffer, {nt, nf},
-                         nb::capsule(buffer, [](void* p) noexcept { delete[] (unsigned char*)p; }));
-          },
-          "beam"_a, "blk0"_a, "blkN"_a)
-      .def(
           "getblks",
           [](FRBRing& x, int beam, int blk0, int blkN) {
             auto [buffer, size] = x.getblks(beam, blk0, blkN);
@@ -406,16 +426,6 @@ NB_MODULE(core, m) {
                          nb::capsule(buffer, [](void* p) noexcept { delete[] (unsigned char*)p; }));
           },
           "beam"_a, "blk0"_a, "blkN"_a)
-      .def(
-          "getslice_unsafe",
-          [](FRBRing& x, int beam, double tbeg, double tend) {
-            auto [buffer, size] = x.getslice_unsafe(beam, tbeg, tend);
-            size_t nf = x.nf();
-            size_t nt = (size_t)(size / nf);
-            return Array(buffer, {nt, nf},
-                         nb::capsule(buffer, [](void* p) noexcept { delete[] (unsigned char*)p; }));
-          },
-          "beam"_a, "tbeg"_a, "tend"_a)
       .def(
           "getslice",
           [](FRBRing& x, int beam, double tbeg, double tend) {

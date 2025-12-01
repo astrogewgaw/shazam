@@ -1,7 +1,8 @@
-#include <shazam/tel.h>
-#include <sys/ipc.h>
+#include "../include/shazam/tel.h"
 
+#include <cstring>
 #include <stdexcept>
+#include <tuple>
 
 namespace shazam {
   void TELRing::open(MODE mode) {
