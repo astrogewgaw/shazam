@@ -9,7 +9,7 @@ namespace shazam {
     if (not m_opened) {
       /** Open the header. **/
       m_mode = mode;
-      m_header.open(m_mode);
+      m_hdr.open(m_mode);
 
       int extrabuf = 64;
       int cursamps = 32 * 25;
@@ -51,44 +51,47 @@ namespace shazam {
   }
 
   void TELRing::read() {
+    /** Read the header. **/
+    m_hdr.read();
+
     /** Transfer some private variables from header instance. **/
-    m_hdrid = m_header.m_hdrid;
-    m_hdrptr = m_header.m_hdrptr;
+    m_hdrid = m_hdr.m_hdrid;
+    m_hdrptr = m_hdr.m_hdrptr;
 
     /** Transfer all metadata from the header instance. **/
-    m_nf = m_header.m_nf;
-    m_fh = m_header.m_fh;
-    m_fl = m_header.m_fl;
-    m_df = m_header.m_df;
-    m_bw = m_header.m_bw;
-    m_dt = m_header.m_dt;
-    m_ra = m_header.m_ra;
-    m_dec = m_header.m_dec;
-    m_nbits = m_header.m_nbits;
-    m_beamid = m_header.m_beamid;
-    m_hostid = m_header.m_hostid;
-    m_nbeams = m_header.m_nbeams;
-    m_source = m_header.m_source;
-    m_nstokes = m_header.m_nstokes;
-    m_flipped = m_header.m_flipped;
-    m_beamras = m_header.m_beamras;
-    m_beamdecs = m_header.m_beamdecs;
-    m_hostname = m_header.m_hostname;
-    m_beammode = m_header.m_beammode;
-    m_observer = m_header.m_observer;
-    m_antspol1 = m_header.m_antspol1;
-    m_antspol2 = m_header.m_antspol2;
-    m_gtaccode = m_header.m_gtaccode;
-    m_gtactitle = m_header.m_gtactitle;
-    m_antmaskpol1 = m_header.m_antmaskpol1;
-    m_antmaskpol2 = m_header.m_antmaskpol2;
-    m_npcbaselines = m_header.m_npcbaselines;
-    m_nbeamspernode = m_header.m_nbeamspernode;
+    m_nf = m_hdr.m_nf;
+    m_fh = m_hdr.m_fh;
+    m_fl = m_hdr.m_fl;
+    m_df = m_hdr.m_df;
+    m_bw = m_hdr.m_bw;
+    m_dt = m_hdr.m_dt;
+    m_ra = m_hdr.m_ra;
+    m_dec = m_hdr.m_dec;
+    m_nbits = m_hdr.m_nbits;
+    m_beamid = m_hdr.m_beamid;
+    m_hostid = m_hdr.m_hostid;
+    m_nbeams = m_hdr.m_nbeams;
+    m_source = m_hdr.m_source;
+    m_nstokes = m_hdr.m_nstokes;
+    m_flipped = m_hdr.m_flipped;
+    m_beamras = m_hdr.m_beamras;
+    m_beamdecs = m_hdr.m_beamdecs;
+    m_hostname = m_hdr.m_hostname;
+    m_beammode = m_hdr.m_beammode;
+    m_observer = m_hdr.m_observer;
+    m_antspol1 = m_hdr.m_antspol1;
+    m_antspol2 = m_hdr.m_antspol2;
+    m_gtaccode = m_hdr.m_gtaccode;
+    m_gtactitle = m_hdr.m_gtactitle;
+    m_antmaskpol1 = m_hdr.m_antmaskpol1;
+    m_antmaskpol2 = m_hdr.m_antmaskpol2;
+    m_npcbaselines = m_hdr.m_npcbaselines;
+    m_nbeamspernode = m_hdr.m_nbeamspernode;
   }
 
   void TELRing::close() {
     if (m_opened) {
-      m_header.close();
+      m_hdr.close();
       if (shmdt(m_bufptr) == -1) throw std::runtime_error("FAILED TO CLOSE TEL SHM. ABORT.");
       m_opened = false;
     }

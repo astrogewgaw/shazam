@@ -82,6 +82,7 @@ NB_MODULE(core, m) {
                throw std::runtime_error("MODE DOESN'T EXIST. ABORT.");
              }
            })
+      .def("read", &Header::read)
       .def("close", &Header::close)
       .def("asdict", [](Header& x) {
         nb::dict header;
@@ -240,6 +241,7 @@ NB_MODULE(core, m) {
                throw std::runtime_error("MODE DOESN'T EXIST. ABORT.");
              }
            })
+      .def("read", &TELRing::read)
       .def("close", &TELRing::close)
       .def("timeofblk", &TELRing::timeofblk, "blk"_a)
       .def(
@@ -404,6 +406,7 @@ NB_MODULE(core, m) {
                throw std::runtime_error("MODE DOESN'T EXIST. ABORT.");
              }
            })
+      .def("read", &FRBRing::read)
       .def("close", &FRBRing::close)
       .def("timeofblk", &FRBRing::timeofblk, "blk"_a)
       .def(

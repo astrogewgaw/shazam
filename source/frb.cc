@@ -42,6 +42,9 @@ namespace shazam {
   }
 
   void FRBRing::read() {
+    /** Read the header. **/
+    m_hdr.read();
+
     /** Transfer some private variables from header instance. **/
     m_hdrid = m_hdr.m_hdrid;
     m_hdrptr = m_hdr.m_hdrptr;

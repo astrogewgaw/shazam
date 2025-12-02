@@ -122,7 +122,7 @@ namespace shazam {
   class TELRing {
   public:
     TELRing()
-        : m_header(),
+        : m_hdr(),
           m_nf(0),
           m_nbits(8),
           m_fh(0.0),
@@ -160,7 +160,7 @@ namespace shazam {
 
     ~TELRing() {};
 
-    Header header() { return m_header; }
+    Header header() { return m_hdr; }
 
     MODE mode() { return m_mode; };
 
@@ -232,7 +232,7 @@ namespace shazam {
     MODE m_mode;
 
     /** Shared memory header. **/
-    Header m_header;
+    Header m_hdr;
 
     /** Data parameters. **/
     int m_nf;
