@@ -20,6 +20,18 @@ NB_MODULE(core, m) {
       .def(nb::init<>())
 
       /** Class properties. **/
+      .def_prop_ro("mode",
+                   [](Header& x) {
+                     switch (x.mode()) {
+                       default:
+                       case READ:
+                         return "r";
+                       case WRITE:
+                         return "w";
+                     }
+                   })
+      .def_prop_ro("opened", [](Header& x) { return x.opened(); })
+
       /** PART I: Data properties. **/
       .def_prop_ro("nf", [](Header& x) { return x.nf(); })
       .def_prop_ro("fh", [](Header& x) { return x.fh(); })
@@ -54,23 +66,6 @@ NB_MODULE(core, m) {
       .def_prop_ro("beamras", [](Header& x) { return x.beamras(); })
       .def_prop_ro("beamdecs", [](Header& x) { return x.beamdecs(); })
 
-      /** PART IV: Shared memory properties. **/
-      .def_prop_ro("opened", [](Header& x) { return x.opened(); })
-
-      /** Dunder methods. **/
-      .def("__exit__", [](Header& x, nb::args _) { x.close(); })
-      .def("__enter__",
-           [](Header& x, std::string mode) {
-             if (mode == "r") {
-               x.open(READ);
-             } else if ((mode == "w") || (mode == "rw")) {
-               x.open(WRITE);
-             } else {
-               throw std::runtime_error("MODE DOESN'T EXIST. ABORT.");
-             }
-             return x;
-           })
-
       /** Public methods. **/
       .def("open",
            [](Header& x, std::string mode) {
@@ -81,8 +76,8 @@ NB_MODULE(core, m) {
              } else {
                throw std::runtime_error("MODE DOESN'T EXIST. ABORT.");
              }
+             return x;
            })
-      .def("read", &Header::read)
       .def("close", &Header::close)
       .def("asdict", [](Header& x) {
         nb::dict header;
@@ -132,6 +127,7 @@ NB_MODULE(core, m) {
                          return "w";
                      }
                    })
+      .def_prop_ro("opened", [](TELRing& x) { return x.opened(); })
 
       /** PART I: Data properties. **/
       .def_prop_ro("nf", [](TELRing& x) { return x.nf(); })
@@ -205,7 +201,6 @@ NB_MODULE(core, m) {
            })
 
       /** PART IV: Shared memory properties. **/
-      .def_prop_ro("opened", [](TELRing& x) { return x.opened(); })
       .def_prop_ro("maxblks", [](TELRing& x) { return x.maxblks(); })
       .def_prop_ro("blksize", [](TELRing& x) { return x.blksize(); })
       .def_prop_ro("blksamps", [](TELRing& x) { return x.blksamps(); })
@@ -215,20 +210,6 @@ NB_MODULE(core, m) {
       .def_prop_ro("endtime", [](TELRing& x) { return x.endtime(); })
       .def_prop_ro("currec", [](TELRing& x) { return x.currec(); })
       .def_prop_ro("curblk", [](TELRing& x) { return x.curblk(); })
-
-      /** Dunder methods. **/
-      .def("__exit__", [](TELRing& x, nb::args _) { x.close(); })
-      .def("__enter__",
-           [](TELRing& x, std::string mode) {
-             if (mode == "r") {
-               x.open(READ);
-             } else if ((mode == "w") || (mode == "rw")) {
-               x.open(WRITE);
-             } else {
-               throw std::runtime_error("MODE DOESN'T EXIST. ABORT.");
-             }
-             return x;
-           })
 
       /** Public methods. **/
       .def("open",
@@ -240,8 +221,8 @@ NB_MODULE(core, m) {
              } else {
                throw std::runtime_error("MODE DOESN'T EXIST. ABORT.");
              }
+             return x;
            })
-      .def("read", &TELRing::read)
       .def("close", &TELRing::close)
       .def("timeofblk", &TELRing::timeofblk, "blk"_a)
       .def(
@@ -290,6 +271,7 @@ NB_MODULE(core, m) {
                          return "w";
                      }
                    })
+      .def_prop_ro("opened", [](FRBRing& x) { return x.opened(); })
 
       /** PART I: Data properties. **/
       .def_prop_ro("nf", [](FRBRing& x) { return x.nf(); })
@@ -366,7 +348,6 @@ NB_MODULE(core, m) {
       /** PART IV: Shared memory properties. **/
       .def_prop_ro("size", [](FRBRing& x) { return x.size(); })
       .def_prop_ro("empty", [](FRBRing& x) { return x.empty(); })
-      .def_prop_ro("opened", [](FRBRing& x) { return x.opened(); })
       .def_prop_ro("status", [](FRBRing& x) { return x.status(); })
       .def_prop_ro("active", [](FRBRing& x) { return x.active(); })
       .def_prop_ro("maxblks", [](FRBRing& x) { return x.maxblks(); })
@@ -381,20 +362,6 @@ NB_MODULE(core, m) {
       .def_prop_ro("begblk", [](FRBRing& x) { return x.begblk(); })
       .def_prop_ro("endblk", [](FRBRing& x) { return x.endblk(); })
 
-      /** Dunder methods. **/
-      .def("__exit__", [](FRBRing& x, nb::args _) { x.close(); })
-      .def("__enter__",
-           [](FRBRing& x, std::string mode) {
-             if (mode == "r") {
-               x.open(READ);
-             } else if ((mode == "w") || (mode == "rw")) {
-               x.open(WRITE);
-             } else {
-               throw std::runtime_error("MODE DOESN'T EXIST. ABORT.");
-             }
-             return x;
-           })
-
       /** Public methods. **/
       .def("open",
            [](FRBRing& x, std::string mode) {
@@ -405,8 +372,8 @@ NB_MODULE(core, m) {
              } else {
                throw std::runtime_error("MODE DOESN'T EXIST. ABORT.");
              }
+             return x;
            })
-      .def("read", &FRBRing::read)
       .def("close", &FRBRing::close)
       .def("timeofblk", &FRBRing::timeofblk, "blk"_a)
       .def(

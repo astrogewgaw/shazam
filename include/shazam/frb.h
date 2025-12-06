@@ -69,52 +69,51 @@ namespace shazam {
           m_beamdecs(std::vector<double>(0.0)),
           m_hdrid(0),
           m_opened(false),
-          m_hdrptr(NULL) {};
+          m_hdrptr(NULL) {}
 
-    ~FRBRing() {};
+    ~FRBRing() {}
 
+    MODE mode() { return m_mode; }
     Header hdr() { return m_hdr; }
-
-    MODE mode() { return m_mode; };
+    bool opened() { return m_opened; }
 
     /** Data parameters. **/
-    int nf() { return m_nf; };
-    double fh() { return m_fh; };
-    double fl() { return m_fl; };
-    double df() { return m_df; };
-    double bw() { return m_bw; };
-    double dt() { return m_dt; };
-    int nbits() { return m_nbits; };
-    int nstokes() { return m_nstokes; };
+    int nf() { return m_nf; }
+    double fh() { return m_fh; }
+    double fl() { return m_fl; }
+    double df() { return m_df; }
+    double bw() { return m_bw; }
+    double dt() { return m_dt; }
+    int nbits() { return m_nbits; }
+    int nstokes() { return m_nstokes; }
     bool flipped() { return m_flipped; }
 
     /** Observation parameters. **/
-    double ra() { return m_ra; };
-    double dec() { return m_dec; };
-    std::string source() { return m_source; };
-    std::string obsdate() { return m_obsdate; };
-    std::string obstime() { return m_obstime; };
-    std::string beammode() { return m_beammode; };
-    std::string observer() { return m_observer; };
-    std::string gtaccode() { return m_gtaccode; };
-    std::string gtactitle() { return m_gtactitle; };
-    unsigned int antmaskpol1() { return m_antmaskpol1; };
-    unsigned int antmaskpol2() { return m_antmaskpol2; };
-    std::vector<std::string> antspol1() { return m_antspol1; };
-    std::vector<std::string> antspol2() { return m_antspol2; };
+    double ra() { return m_ra; }
+    double dec() { return m_dec; }
+    std::string source() { return m_source; }
+    std::string obsdate() { return m_obsdate; }
+    std::string obstime() { return m_obstime; }
+    std::string beammode() { return m_beammode; }
+    std::string observer() { return m_observer; }
+    std::string gtaccode() { return m_gtaccode; }
+    std::string gtactitle() { return m_gtactitle; }
+    unsigned int antmaskpol1() { return m_antmaskpol1; }
+    unsigned int antmaskpol2() { return m_antmaskpol2; }
+    std::vector<std::string> antspol1() { return m_antspol1; }
+    std::vector<std::string> antspol2() { return m_antspol2; }
 
     /** Beam tiling and steering parameters. **/
-    int beamid() { return m_beamid; };
-    int hostid() { return m_hostid; };
-    int nbeams() { return m_nbeams; };
-    std::string hostname() { return m_hostname; };
-    int npcbaselines() { return m_npcbaselines; };
-    int nbeamspernode() { return m_nbeamspernode; };
-    std::vector<double> beamras() { return m_beamras; };
-    std::vector<double> beamdecs() { return m_beamdecs; };
+    int beamid() { return m_beamid; }
+    int hostid() { return m_hostid; }
+    int nbeams() { return m_nbeams; }
+    std::string hostname() { return m_hostname; }
+    int npcbaselines() { return m_npcbaselines; }
+    int nbeamspernode() { return m_nbeamspernode; }
+    std::vector<double> beamras() { return m_beamras; }
+    std::vector<double> beamdecs() { return m_beamdecs; }
 
     /** Shared memory parameters **/
-    bool opened() { return m_opened; }
     int maxblks() { return FRBMAXBLKS; }
     int blksamps() { return FRBBLKSAMPS; }
 
@@ -137,8 +136,6 @@ namespace shazam {
     double endtime() { return timeofblk(endblk()); }
 
     /** Public methods. **/
-    void read();
-    void write();
     void close();
     void open(MODE mode);
 
@@ -151,9 +148,8 @@ namespace shazam {
 
   private:
     MODE m_mode;
-
-    /** Shared memory header. **/
     Header m_hdr;
+    bool m_opened;
 
     /** Data parameters. **/
     int m_nf;
@@ -195,7 +191,6 @@ namespace shazam {
     /** Shared memory parameters. **/
     int m_hdrid;
     int m_bufid;
-    bool m_opened;
     BeamHeaderType* m_hdrptr;
     BeamBufferType* m_bufptr;
     unsigned char* m_dataptr;

@@ -27,15 +27,51 @@ namespace shazam {
       long curshmsize = curshmdatasize + shmdataoff;
 
       switch (m_mode) {
-        case READ:
+        case READ: {
           m_bufid = shmget(ShmKey, curshmsize, SHM_RDONLY);
           if (m_bufid < 0) throw std::runtime_error("UNABLE TO GET TEL SHM ID. ABORT.");
           m_bufptr = (GlobalInfoType*)shmat(m_bufid, NULL, SHM_RDONLY);
           if ((void*)m_bufptr == (void*)-1)
             throw std::runtime_error("FAILED TO OPEN TEL SHM. ABORT.");
           m_dataptr = (unsigned char*)m_bufptr;
+
+          /** Transfer some private variables from header instance. **/
+          m_hdrid = m_hdr.m_hdrid;
+          m_hdrptr = m_hdr.m_hdrptr;
+
+          /** Transfer all metadata from the header instance. **/
+          m_nf = m_hdr.m_nf;
+          m_fh = m_hdr.m_fh;
+          m_fl = m_hdr.m_fl;
+          m_df = m_hdr.m_df;
+          m_bw = m_hdr.m_bw;
+          m_dt = m_hdr.m_dt;
+          m_ra = m_hdr.m_ra;
+          m_dec = m_hdr.m_dec;
+          m_nbits = m_hdr.m_nbits;
+          m_beamid = m_hdr.m_beamid;
+          m_hostid = m_hdr.m_hostid;
+          m_nbeams = m_hdr.m_nbeams;
+          m_source = m_hdr.m_source;
+          m_nstokes = m_hdr.m_nstokes;
+          m_flipped = m_hdr.m_flipped;
+          m_beamras = m_hdr.m_beamras;
+          m_beamdecs = m_hdr.m_beamdecs;
+          m_hostname = m_hdr.m_hostname;
+          m_beammode = m_hdr.m_beammode;
+          m_observer = m_hdr.m_observer;
+          m_antspol1 = m_hdr.m_antspol1;
+          m_antspol2 = m_hdr.m_antspol2;
+          m_gtaccode = m_hdr.m_gtaccode;
+          m_gtactitle = m_hdr.m_gtactitle;
+          m_antmaskpol1 = m_hdr.m_antmaskpol1;
+          m_antmaskpol2 = m_hdr.m_antmaskpol2;
+          m_npcbaselines = m_hdr.m_npcbaselines;
+          m_nbeamspernode = m_hdr.m_nbeamspernode;
+
           break;
-        case WRITE:
+        }
+        case WRITE: {
           m_bufid = shmget(ShmKey, curshmsize, IPC_CREAT | 0777);
           if (m_bufid < 0) throw std::runtime_error("UNABLE TO GET TEL SHM ID. ABORT.");
           m_bufptr = (GlobalInfoType*)shmat(m_bufid, NULL, 0);
@@ -43,50 +79,12 @@ namespace shazam {
             throw std::runtime_error("FAILED TO OPEN TEL SHM. ABORT.");
           m_dataptr = (unsigned char*)m_bufptr;
           break;
+        }
       }
 
       /** If everything goes well, update status. **/
       m_opened = true;
     }
-  }
-
-  void TELRing::read() {
-    /** Read the header. **/
-    m_hdr.read();
-
-    /** Transfer some private variables from header instance. **/
-    m_hdrid = m_hdr.m_hdrid;
-    m_hdrptr = m_hdr.m_hdrptr;
-
-    /** Transfer all metadata from the header instance. **/
-    m_nf = m_hdr.m_nf;
-    m_fh = m_hdr.m_fh;
-    m_fl = m_hdr.m_fl;
-    m_df = m_hdr.m_df;
-    m_bw = m_hdr.m_bw;
-    m_dt = m_hdr.m_dt;
-    m_ra = m_hdr.m_ra;
-    m_dec = m_hdr.m_dec;
-    m_nbits = m_hdr.m_nbits;
-    m_beamid = m_hdr.m_beamid;
-    m_hostid = m_hdr.m_hostid;
-    m_nbeams = m_hdr.m_nbeams;
-    m_source = m_hdr.m_source;
-    m_nstokes = m_hdr.m_nstokes;
-    m_flipped = m_hdr.m_flipped;
-    m_beamras = m_hdr.m_beamras;
-    m_beamdecs = m_hdr.m_beamdecs;
-    m_hostname = m_hdr.m_hostname;
-    m_beammode = m_hdr.m_beammode;
-    m_observer = m_hdr.m_observer;
-    m_antspol1 = m_hdr.m_antspol1;
-    m_antspol2 = m_hdr.m_antspol2;
-    m_gtaccode = m_hdr.m_gtaccode;
-    m_gtactitle = m_hdr.m_gtactitle;
-    m_antmaskpol1 = m_hdr.m_antmaskpol1;
-    m_antmaskpol2 = m_hdr.m_antmaskpol2;
-    m_npcbaselines = m_hdr.m_npcbaselines;
-    m_nbeamspernode = m_hdr.m_nbeamspernode;
   }
 
   void TELRing::close() {
