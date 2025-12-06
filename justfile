@@ -1,5 +1,4 @@
 pkg  := "shazam"
-desc := "I/O for GMRT ring buffers, with the power of SHAZAM!"
 
 alias d := docs
 alias c := clean

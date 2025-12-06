@@ -4,7 +4,7 @@ project(
   shazam
   VERSION 1.0
   LANGUAGES CXX
-  DESCRIPTION "I/O for GMRT ring buffers, with the power of SHAZAM!"
+  DESCRIPTION "I/O for SPOTLIGHT ring buffers, with the power of SHAZAM!"
 )
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
