@@ -3,6 +3,7 @@
 
 #include <sys/shm.h>
 
+#include <chrono>
 #include <cmath>
 #include <string>
 #include <tuple>
@@ -120,20 +121,21 @@ namespace shazam {
     bool empty() { return m_bufptr->empty; }
     bool status() { return m_bufptr->status; }
     bool active() { return m_bufptr->active; }
+
     unsigned int curblk() { return m_bufptr->curblk; }
-    unsigned int currec() {
-      return (m_bufptr->empty) ? m_bufptr->currec : (m_bufptr->currec - 1) % maxblks();
-    }
+    unsigned int currec() { return m_bufptr->currec; }
+    int begblk() { return (int)std::floor(curblk() / maxblks()) * maxblks(); }
+    int endblk() { return begblk() + maxblks() - 1; }
 
     long blksize() { return blksamps() * m_nf; }
     long size() { return maxblks() * blksize(); }
+
     double blktime() { return blksamps() * m_dt; }
-    double timeofblk(int blk) { return blk * blktime(); }
     double curtime() { return timeofblk(curblk()); }
-    int begblk() { return (int)std::floor(curblk() / maxblks()) * maxblks(); }
-    int endblk() { return begblk() + maxblks() - 1; }
     double begtime() { return timeofblk(begblk()); }
     double endtime() { return timeofblk(endblk()); }
+    double timeofblk(int blk) { return blk * blktime(); }
+    std::vector<std::chrono::system_clock::time_point> timestamps() { return m_timestamps; };
 
     /** Public methods. **/
     void close();
@@ -194,6 +196,7 @@ namespace shazam {
     BeamHeaderType* m_hdrptr;
     BeamBufferType* m_bufptr;
     unsigned char* m_dataptr;
+    std::vector<std::chrono::system_clock::time_point> m_timestamps;
 
     /** Shared memory pointers. **/
     unsigned char* ptrtobeam(int beam);

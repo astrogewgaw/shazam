@@ -7,6 +7,16 @@ project(
   DESCRIPTION "I/O for SPOTLIGHT ring buffers, with the power of SHAZAM!"
 )
 
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE
+      Release
+      CACHE STRING "Choose the type of build." FORCE
+  )
+  set_property(
+    CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo"
+  )
+endif()
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 include(CPM)
 include(LTO)
@@ -24,7 +34,13 @@ add_library(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/shazam/frb.h ${CMAKE_CURRENT_SOURCE_DIR}/src/hdr.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/src/tel.cc ${CMAKE_CURRENT_SOURCE_DIR}/src/frb.cc
 )
-set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
+target_enable_lto(${PROJECT_NAME} optimized)
+set_target_properties(
+  ${PROJECT_NAME}
+  PROPERTIES CXX_STANDARD 17
+             CXX_EXTENSIONS NO
+             CXX_STANDARD_REQUIRED YES
+)
 target_link_libraries(${PROJECT_NAME})
 target_include_directories(
   ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
@@ -44,10 +60,15 @@ packageProject(
 )
 
 set(PYTHON_EXT_NAME core)
+if(CMAKE_VERSION VERSION_LESS 3.18)
+  set(DEV_MODULE Development)
+else()
+  set(DEV_MODULE Development.Module)
+endif()
 find_package(
-  Python 3.10 REQUIRED
-  COMPONENTS Interpreter Development.Module
-  OPTIONAL_COMPONENTS Development.SABIModule
+  Python 3.10
+  COMPONENTS Interpreter ${DEV_MODULE}
+  REQUIRED
 )
 execute_process(
   COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir

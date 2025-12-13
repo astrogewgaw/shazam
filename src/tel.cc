@@ -69,6 +69,14 @@ namespace shazam {
           m_npcbaselines = m_hdr.m_npcbaselines;
           m_nbeamspernode = m_hdr.m_nbeamspernode;
 
+          /** Get timestamps. **/
+          for (int ii = 0; ii < maxblks(); ++ii) {
+            m_timestamps.push_back(std::chrono::system_clock::time_point{
+                std::chrono::seconds{m_bufptr->rec[ii].timestamp_gps.tv_sec}
+                + std::chrono::microseconds{m_bufptr->rec[ii].timestamp_gps.tv_usec}
+                + std::chrono::nanoseconds{(long)m_bufptr->rec[ii].blk_nano}});
+          }
+
           break;
         }
         case WRITE: {

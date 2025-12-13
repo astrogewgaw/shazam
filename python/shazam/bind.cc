@@ -1,5 +1,6 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <nanobind/stl/chrono.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 
@@ -202,14 +203,32 @@ NB_MODULE(core, m) {
 
       /** PART IV: Shared memory properties. **/
       .def_prop_ro("maxblks", [](TELRing& x) { return x.maxblks(); })
-      .def_prop_ro("blksize", [](TELRing& x) { return x.blksize(); })
       .def_prop_ro("blksamps", [](TELRing& x) { return x.blksamps(); })
+
+      .def_prop_ro("acqover", [](TELRing& x) { return x.acqover(); })
+      .def_prop_ro("gpsok", [](TELRing& x) { return x.gpsok(); })
+      .def_prop_ro("acqok", [](TELRing& x) { return x.acqok(); })
+
+      .def_prop_ro("marked", [](TELRing& x) { return x.marked(); })
+      .def_prop_ro("dataok", [](TELRing& x) { return x.dataok(); })
+      .def_prop_ro("blkok", [](TELRing& x) { return x.blkok(); })
+      .def_prop_ro("timeok", [](TELRing& x) { return x.timeok(); })
+      .def_prop_ro("noinit", [](TELRing& x) { return x.noinit(); })
+
+      .def_prop_ro("curblk", [](TELRing& x) { return x.curblk(); })
+      .def_prop_ro("currec", [](TELRing& x) { return x.currec(); })
+      .def_prop_ro("begblk", [](TELRing& x) { return x.begblk(); })
+      .def_prop_ro("endblk", [](TELRing& x) { return x.endblk(); })
+
+      .def_prop_ro("blksize", [](TELRing& x) { return x.blksize(); })
+      .def_prop_ro("size", [](TELRing& x) { return x.size(); })
+
       .def_prop_ro("blktime", [](TELRing& x) { return x.blktime(); })
       .def_prop_ro("curtime", [](TELRing& x) { return x.curtime(); })
       .def_prop_ro("begtime", [](TELRing& x) { return x.begtime(); })
       .def_prop_ro("endtime", [](TELRing& x) { return x.endtime(); })
-      .def_prop_ro("currec", [](TELRing& x) { return x.currec(); })
-      .def_prop_ro("curblk", [](TELRing& x) { return x.curblk(); })
+      .def("timeofblk", &TELRing::timeofblk, "blk"_a)
+      .def_prop_ro("timestamps", [](FRBRing& x) { return x.timestamps(); })
 
       /** Public methods. **/
       .def("open",
@@ -224,7 +243,6 @@ NB_MODULE(core, m) {
              return x;
            })
       .def("close", &TELRing::close)
-      .def("timeofblk", &TELRing::timeofblk, "blk"_a)
       .def(
           "getblk",
           [](TELRing& x, int beam, int blk) {
@@ -346,21 +364,27 @@ NB_MODULE(core, m) {
            })
 
       /** PART IV: Shared memory properties. **/
-      .def_prop_ro("size", [](FRBRing& x) { return x.size(); })
+      .def_prop_ro("maxblks", [](FRBRing& x) { return x.maxblks(); })
+      .def_prop_ro("blksamps", [](FRBRing& x) { return x.blksamps(); })
+
       .def_prop_ro("empty", [](FRBRing& x) { return x.empty(); })
       .def_prop_ro("status", [](FRBRing& x) { return x.status(); })
       .def_prop_ro("active", [](FRBRing& x) { return x.active(); })
-      .def_prop_ro("maxblks", [](FRBRing& x) { return x.maxblks(); })
+
+      .def_prop_ro("curblk", [](FRBRing& x) { return x.curblk(); })
+      .def_prop_ro("currec", [](FRBRing& x) { return x.currec(); })
+      .def_prop_ro("begblk", [](FRBRing& x) { return x.begblk(); })
+      .def_prop_ro("endblk", [](FRBRing& x) { return x.endblk(); })
+
       .def_prop_ro("blksize", [](FRBRing& x) { return x.blksize(); })
-      .def_prop_ro("blksamps", [](FRBRing& x) { return x.blksamps(); })
+      .def_prop_ro("size", [](FRBRing& x) { return x.size(); })
+
       .def_prop_ro("blktime", [](FRBRing& x) { return x.blktime(); })
       .def_prop_ro("curtime", [](FRBRing& x) { return x.curtime(); })
       .def_prop_ro("begtime", [](FRBRing& x) { return x.begtime(); })
       .def_prop_ro("endtime", [](FRBRing& x) { return x.endtime(); })
-      .def_prop_ro("currec", [](FRBRing& x) { return x.currec(); })
-      .def_prop_ro("curblk", [](FRBRing& x) { return x.curblk(); })
-      .def_prop_ro("begblk", [](FRBRing& x) { return x.begblk(); })
-      .def_prop_ro("endblk", [](FRBRing& x) { return x.endblk(); })
+      .def("timeofblk", &FRBRing::timeofblk, "blk"_a)
+      .def_prop_ro("timestamps", [](FRBRing& x) { return x.timestamps(); })
 
       /** Public methods. **/
       .def("open",
@@ -375,7 +399,6 @@ NB_MODULE(core, m) {
              return x;
            })
       .def("close", &FRBRing::close)
-      .def("timeofblk", &FRBRing::timeofblk, "blk"_a)
       .def(
           "getblk",
           [](FRBRing& x, int beam, int blk) {

@@ -125,7 +125,6 @@ namespace shazam {
           }
 
           /** Set antenna masks and antennas. **/
-          unsigned int refantmask = 1;
           m_hdrptr->BeamGenHdr.GAC_maskP1 = m_antmaskpol1;
           m_hdrptr->BeamGenHdr.GAC_maskP2 = m_antmaskpol2;
 

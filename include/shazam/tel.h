@@ -3,6 +3,7 @@
 
 #include <sys/shm.h>
 
+#include <chrono>
 #include <cmath>
 #include <string>
 #include <tuple>
@@ -204,16 +205,30 @@ namespace shazam {
     int maxblks() { return MaxRecs; }
     int blksamps() { return 32 * 25; }
 
+    bool acqover() { return m_bufptr->acq_flag & AcqOver; }
+    bool gpsok() { return m_bufptr->acq_flag & GPSpresent; }
+    bool acqok() { return !(m_bufptr->acq_flag & UnInitialized); }
+
+    bool marked() { return m_bufptr->rec[currec()].rec_flag & Marked; }
+    bool dataok() { return m_bufptr->rec[currec()].rec_flag & GoodData; }
+    bool blkok() { return !(m_bufptr->rec[currec()].rec_flag & BlockErr); }
+    bool timeok() { return !(m_bufptr->rec[currec()].rec_flag & TimeErr); }
+    bool noinit() { return m_bufptr->rec[currec()].rec_flag & UnInitialized; }
+
     unsigned int curblk() { return m_bufptr->rec[currec()].rec_seq; }
     unsigned int currec() { return (m_bufptr->rec_ind - 1) % maxblks(); }
+    int begblk() { return (int)std::floor(curblk() / maxblks()) * maxblks(); }
+    int endblk() { return begblk() + maxblks() - 1; }
 
     long blksize() { return blksamps() * nf(); }
     long size() { return maxblks() * blksize(); }
+
     double blktime() { return blksamps() * dt(); }
-    double timeofblk(int blk) { return blk * blktime(); }
     double curtime() { return timeofblk(curblk()); }
-    double endtime() { return timeofblk(std::ceil(curblk() / maxblks())); }
-    double begtime() { return timeofblk(std::floor(curblk() / maxblks())); }
+    double begtime() { return timeofblk(begblk()); }
+    double endtime() { return timeofblk(endblk()); }
+    double timeofblk(int blk) { return blk * blktime(); }
+    std::vector<std::chrono::system_clock::time_point> timestamps() { return m_timestamps; };
 
     /** Public methods. **/
     void close();
@@ -273,6 +288,7 @@ namespace shazam {
     BeamHeaderType* m_hdrptr;
     GlobalInfoType* m_bufptr;
     unsigned char* m_dataptr;
+    std::vector<std::chrono::system_clock::time_point> m_timestamps;
 
     /** Shared memory pointers. **/
     unsigned char* ptrtobeam(int beam);
