@@ -27,6 +27,12 @@ include(ConfigSafeGuards)
 find_lto(CXX)
 
 CPMAddPackage("gh:TheLartians/PackageProject.cmake@1.8.0")
+CPMAddPackage(
+  NAME fmt
+  GIT_TAG 12.1.0
+  OPTIONS "FMT_INSTALL YES"
+  GITHUB_REPOSITORY fmtlib/fmt
+)
 
 add_library(
   ${PROJECT_NAME}
@@ -41,7 +47,7 @@ set_target_properties(
              CXX_EXTENSIONS NO
              CXX_STANDARD_REQUIRED YES
 )
-target_link_libraries(${PROJECT_NAME})
+target_link_libraries(${PROJECT_NAME} fmt::fmt)
 target_include_directories(
   ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
                          $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
