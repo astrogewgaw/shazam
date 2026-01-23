@@ -1,8 +1,5 @@
 #include "../include/shazam/frb.h"
 
-#include <fmt/chrono.h>
-#include <fmt/format.h>
-
 #include <cstring>
 #include <stdexcept>
 #include <tuple>
@@ -71,9 +68,6 @@ namespace shazam {
                 + std::chrono::microseconds{m_bufptr->timestamps[ii].tv_usec}
                 + std::chrono::nanoseconds{(long)m_bufptr->nanoseconds[ii]}});
           }
-
-          m_obsdate = fmt::format("{:%Y-%m-%d}", m_timestamps[currec()]);
-          m_obstime = fmt::format("{:%H:%M:%S}", m_timestamps[currec()]);
 
           break;
         }

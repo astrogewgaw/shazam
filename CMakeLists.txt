@@ -27,12 +27,6 @@ include(ConfigSafeGuards)
 find_lto(CXX)
 
 CPMAddPackage("gh:TheLartians/PackageProject.cmake@1.8.0")
-CPMAddPackage(
-  NAME fmt
-  GIT_TAG 12.1.0
-  OPTIONS "FMT_INSTALL YES"
-  GITHUB_REPOSITORY fmtlib/fmt
-)
 
 add_library(
   ${PROJECT_NAME}
@@ -40,14 +34,14 @@ add_library(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/shazam/frb.h ${CMAKE_CURRENT_SOURCE_DIR}/src/hdr.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/src/tel.cc ${CMAKE_CURRENT_SOURCE_DIR}/src/frb.cc
 )
-target_enable_lto(${PROJECT_NAME} optimized)
 set_target_properties(
   ${PROJECT_NAME}
   PROPERTIES CXX_STANDARD 17
              CXX_EXTENSIONS NO
              CXX_STANDARD_REQUIRED YES
 )
-target_link_libraries(${PROJECT_NAME} fmt::fmt)
+target_enable_lto(${PROJECT_NAME} optimized)
+target_link_libraries(${PROJECT_NAME})
 target_include_directories(
   ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
                          $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
@@ -85,7 +79,6 @@ list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
 find_package(nanobind CONFIG REQUIRED)
 nanobind_add_module(
   ${PYTHON_EXT_NAME}
-  STABLE_ABI
   ${CMAKE_CURRENT_SOURCE_DIR}/include/shazam/hdr.h
   ${CMAKE_CURRENT_SOURCE_DIR}/include/shazam/tel.h
   ${CMAKE_CURRENT_SOURCE_DIR}/include/shazam/frb.h
