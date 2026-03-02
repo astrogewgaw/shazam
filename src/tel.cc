@@ -5,6 +5,35 @@
 #include <tuple>
 
 namespace shazam {
+  void TELRing::update() {
+    if (m_opened) {
+      switch (m_mode) {
+        case READ: {
+          /** Update the header. **/
+          m_hdr.update();
+          m_hdrid = m_hdr.m_hdrid;
+          m_hdrptr = m_hdr.m_hdrptr;
+
+          /** Get timestamps. **/
+          for (int ii = 0; ii < maxblks(); ++ii) {
+            m_timestamps.push_back(std::chrono::system_clock::time_point{
+                std::chrono::seconds{m_bufptr->rec[ii].timestamp_gps.tv_sec}
+                + std::chrono::microseconds{m_bufptr->rec[ii].timestamp_gps.tv_usec}
+                + std::chrono::nanoseconds{(long)m_bufptr->rec[ii].blk_nano}});
+          }
+
+          break;
+        }
+        case WRITE: {
+          /** Update the header. **/
+          m_hdr.update();
+
+          break;
+        }
+      }
+    }
+  }
+
   void TELRing::open(MODE mode) {
     if (not m_opened) {
       /** Open the header. **/
@@ -13,10 +42,10 @@ namespace shazam {
 
       int extrabuf = 64;
       int cursamps = 32 * 25;
-      long int curtotalwords = cursamps * m_nf;
+      long int curtotalwords = cursamps * m_hdr.m_nf;
       long int currecsize = curtotalwords * WordSize / 2;
 
-      long curshmdatasize = (MaxRecs + 1) * currecsize * m_nbeamspernode + extrabuf;
+      long curshmdatasize = (MaxRecs + 1) * currecsize * m_hdr.m_nbeamspernode + extrabuf;
       curshmdatasize = curshmdatasize / PageSize + 1;
       curshmdatasize = curshmdatasize * PageSize;
 
@@ -34,49 +63,8 @@ namespace shazam {
           if ((void*)m_bufptr == (void*)-1)
             throw std::runtime_error("FAILED TO OPEN TEL SHM. ABORT.");
           m_dataptr = (unsigned char*)m_bufptr;
-
-          /** Transfer some private variables from header instance. **/
-          m_hdrid = m_hdr.m_hdrid;
-          m_hdrptr = m_hdr.m_hdrptr;
-
-          /** Transfer all metadata from the header instance. **/
-          m_nf = m_hdr.m_nf;
-          m_fh = m_hdr.m_fh;
-          m_fl = m_hdr.m_fl;
-          m_df = m_hdr.m_df;
-          m_bw = m_hdr.m_bw;
-          m_dt = m_hdr.m_dt;
-          m_ra = m_hdr.m_ra;
-          m_dec = m_hdr.m_dec;
-          m_nbits = m_hdr.m_nbits;
-          m_beamid = m_hdr.m_beamid;
-          m_hostid = m_hdr.m_hostid;
-          m_nbeams = m_hdr.m_nbeams;
-          m_source = m_hdr.m_source;
-          m_nstokes = m_hdr.m_nstokes;
-          m_flipped = m_hdr.m_flipped;
-          m_beamras = m_hdr.m_beamras;
-          m_beamdecs = m_hdr.m_beamdecs;
-          m_hostname = m_hdr.m_hostname;
-          m_beammode = m_hdr.m_beammode;
-          m_observer = m_hdr.m_observer;
-          m_antspol1 = m_hdr.m_antspol1;
-          m_antspol2 = m_hdr.m_antspol2;
-          m_gtaccode = m_hdr.m_gtaccode;
-          m_gtactitle = m_hdr.m_gtactitle;
-          m_antmaskpol1 = m_hdr.m_antmaskpol1;
-          m_antmaskpol2 = m_hdr.m_antmaskpol2;
-          m_npcbaselines = m_hdr.m_npcbaselines;
-          m_nbeamspernode = m_hdr.m_nbeamspernode;
-
-          /** Get timestamps. **/
-          for (int ii = 0; ii < maxblks(); ++ii) {
-            m_timestamps.push_back(std::chrono::system_clock::time_point{
-                std::chrono::seconds{m_bufptr->rec[ii].timestamp_gps.tv_sec}
-                + std::chrono::microseconds{m_bufptr->rec[ii].timestamp_gps.tv_usec}
-                + std::chrono::nanoseconds{(long)m_bufptr->rec[ii].blk_nano}});
-          }
-
+          m_opened = true;
+          update();
           break;
         }
         case WRITE: {
@@ -86,12 +74,11 @@ namespace shazam {
           if ((void*)m_bufptr == (void*)-1)
             throw std::runtime_error("FAILED TO OPEN TEL SHM. ABORT.");
           m_dataptr = (unsigned char*)m_bufptr;
+          m_opened = true;
+          update();
           break;
         }
       }
-
-      /** If everything goes well, update status. **/
-      m_opened = true;
     }
   }
 
@@ -109,7 +96,7 @@ namespace shazam {
   }
 
   unsigned char* TELRing::ptrtoblk(int beam, int blk) {
-    if (m_opened) return ptrtobeam(beam) + (blksize() * m_nbeamspernode * (blk % maxblks()));
+    if (m_opened) return ptrtobeam(beam) + (blksize() * nbeamspernode() * (blk % maxblks()));
     throw std::runtime_error("TEL SHM NOT OPEN. ABORT.");
   }
 
@@ -117,15 +104,15 @@ namespace shazam {
     if (m_opened) {
       if (t > curtime()) throw std::runtime_error("DATA NOT YET WRITTEN. ABORT.");
       int blk = (int)std::floor(t / blktime());
-      int leftsamps = (int)std::round((t - blk * blktime()) / m_dt);
-      return ptrtoblk(beam, blk) + (long)leftsamps * (long)m_nf;
+      int leftsamps = (int)std::round((t - blk * blktime()) / dt());
+      return ptrtoblk(beam, blk) + (long)leftsamps * (long)nf();
     }
     throw std::runtime_error("TEL SHM NOT OPEN. ABORT.");
   }
 
   void TELRing::putblk(unsigned char* data, int beam, int blk) {
     if (m_opened) {
-      size_t size = blksamps() * m_nf;
+      size_t size = blksamps() * nf();
       unsigned char* ptr = ptrtoblk(beam, blk);
       for (int i = 0; i < blksize(); ++i) ptr[i] = data[i];
     }
@@ -147,7 +134,7 @@ namespace shazam {
       if (timeofblk(blk) > curtime()) throw std::runtime_error("BLOCK NOT YET WRITTEN. ABORT.");
 
       unsigned char* ptr = ptrtoblk(beam, blk);
-      size_t size = blksamps() * m_nf;
+      size_t size = blksamps() * nf();
       unsigned char* data = new unsigned char[size];
       for (int i = 0; i < blksize(); ++i) data[i] = ptr[i];
       return std::make_tuple(data, size);
@@ -164,7 +151,7 @@ namespace shazam {
 
       int nblks = blkN - blk0 + 1;
       size_t size = (size_t)nblks * nf();
-      unsigned char* data = new unsigned char[nblks * blksamps() * m_nf];
+      unsigned char* data = new unsigned char[nblks * blksamps() * nf()];
       for (int iblk = 0; iblk < nblks; ++iblk) {
         unsigned char* ptr = ptrtoblk(beam, blk0 + iblk);
         for (int i = iblk * blksize(); i < (iblk + 1) * blksize(); ++i) data[i] = ptr[i];
@@ -181,10 +168,10 @@ namespace shazam {
       if (curtime() >= ((unsigned int)std::floor(tbeg / blktime()) + maxblks()) * blktime())
         throw std::runtime_error("DATA OVERWRITTEN. ABORT.");
 
-      size_t begN = (size_t)std::round(tbeg / m_dt);
-      size_t endN = (size_t)std::round(tend / m_dt);
+      size_t begN = (size_t)std::round(tbeg / dt());
+      size_t endN = (size_t)std::round(tend / dt());
       size_t N = endN - begN;
-      size_t size = N * m_nf;
+      size_t size = N * nf();
 
       unsigned char* data = new unsigned char[size];
 

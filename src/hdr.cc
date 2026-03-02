@@ -4,19 +4,10 @@
 #include <stdexcept>
 
 namespace shazam {
-  void Header::open(MODE mode) {
-    if (not m_opened) {
-      switch (mode) {
+  void Header::update() {
+    if (m_opened) {
+      switch (m_mode) {
         case READ: {
-          m_mode = mode;
-          /** Attach to header. **/
-          m_hdrid = shmget(MULTIHDRKEY, sizeof(BeamHeaderType), SHM_RDONLY);
-          if (m_hdrid < 0) throw std::runtime_error("UNABLE TO GET HDR SHM ID. ABORT.");
-          m_hdrptr = (BeamHeaderType*)shmat(m_hdrid, NULL, SHM_RDONLY);
-          if ((void*)m_hdrptr == (void*)-1)
-            throw std::runtime_error("FAILED TO LINK TO HDR SHM. ABORT");
-
-          /** Read in all header parameters... **/
           ScanInfoType* scan = &(m_hdrptr->ScanTab[0]);
 
           /** Get some beam and host parameters early. **/
@@ -72,14 +63,6 @@ namespace shazam {
           break;
         }
         case WRITE: {
-          m_mode = mode;
-          /** Create (empty) header. **/
-          m_hdrid = shmget(MULTIHDRKEY, sizeof(BeamHeaderType), IPC_CREAT | 0666);
-          if (m_hdrid < 0) throw std::runtime_error("UNABLE TO GET HDR SHM ID. ABORT.");
-          m_hdrptr = (BeamHeaderType*)shmat(m_hdrid, NULL, 0);
-          if ((void*)m_hdrptr == (void*)-1)
-            throw std::runtime_error("FAILED TO CREATE HDR SHM. ABORT");
-
           ScanInfoType* scan = &(m_hdrptr->ScanTab[0]);
 
           /** Set some beam and host parameters early. **/
@@ -143,8 +126,45 @@ namespace shazam {
           break;
         }
       }
-      /** If everything goes well, update status. **/
-      m_opened = true;
+    }
+  }
+
+  void Header::open(MODE mode) {
+    if (not m_opened) {
+      switch (mode) {
+        case READ: {
+          m_mode = mode;
+          /** Attach to header. **/
+          m_hdrid = shmget(MULTIHDRKEY, sizeof(BeamHeaderType), SHM_RDONLY);
+          if (m_hdrid < 0) throw std::runtime_error("UNABLE TO GET HDR SHM ID. ABORT.");
+          m_hdrptr = (BeamHeaderType*)shmat(m_hdrid, NULL, SHM_RDONLY);
+          if ((void*)m_hdrptr == (void*)-1)
+            throw std::runtime_error("FAILED TO LINK TO HDR SHM. ABORT");
+
+          /** If everything goes well, update status. **/
+          m_opened = true;
+
+          /** Read in all header parameters **/
+          update();
+          break;
+        }
+        case WRITE: {
+          m_mode = mode;
+          /** Create (empty) header. **/
+          m_hdrid = shmget(MULTIHDRKEY, sizeof(BeamHeaderType), IPC_CREAT | 0666);
+          if (m_hdrid < 0) throw std::runtime_error("UNABLE TO GET HDR SHM ID. ABORT.");
+          m_hdrptr = (BeamHeaderType*)shmat(m_hdrid, NULL, 0);
+          if ((void*)m_hdrptr == (void*)-1)
+            throw std::runtime_error("FAILED TO CREATE HDR SHM. ABORT");
+
+          /** If everything goes well, update status. **/
+          m_opened = true;
+
+          /** Write out all header parameters. **/
+          update();
+          break;
+        }
+      }
     }
   }
 
@@ -154,4 +174,6 @@ namespace shazam {
       m_opened = false;
     }
   }
+
+  void Header::copy(Header hdr) { memcpy(hdr.m_hdrptr, m_hdrptr, sizeof(BeamHeaderType)); }
 }  // namespace shazam

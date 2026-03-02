@@ -697,8 +697,10 @@ namespace shazam {
     std::vector<double> beamdecs() { return m_beamdecs; }
 
     /** Public methods. **/
-    void close();
+    void copy(Header hdr);
     void open(MODE mode);
+    void update();
+    void close();
 
     friend class TELRing;
     friend class FRBRing;

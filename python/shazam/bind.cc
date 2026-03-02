@@ -79,7 +79,9 @@ NB_MODULE(core, m) {
              }
              return x;
            })
+      .def("copy", &Header::copy)
       .def("close", &Header::close)
+      .def("update", &Header::update)
       .def("asdict", [](Header& x) {
         nb::dict header;
         header["nf"] = x.nf();
@@ -145,8 +147,6 @@ NB_MODULE(core, m) {
       .def_prop_ro("ra", [](TELRing& x) { return x.ra(); })
       .def_prop_ro("dec", [](TELRing& x) { return x.dec(); })
       .def_prop_ro("source", [](TELRing& x) { return x.source(); })
-      .def_prop_ro("obsdate", [](TELRing& x) { return x.obsdate(); })
-      .def_prop_ro("obstime", [](TELRing& x) { return x.obstime(); })
       .def_prop_ro("beammode", [](TELRing& x) { return x.beammode(); })
       .def_prop_ro("observer", [](TELRing& x) { return x.observer(); })
       .def_prop_ro("gtaccode", [](TELRing& x) { return x.gtaccode(); })
@@ -243,6 +243,7 @@ NB_MODULE(core, m) {
              return x;
            })
       .def("close", &TELRing::close)
+      .def("update", &TELRing::update)
       .def(
           "getblk",
           [](TELRing& x, int beam, int blk) {
@@ -306,8 +307,6 @@ NB_MODULE(core, m) {
       .def_prop_ro("ra", [](FRBRing& x) { return x.ra(); })
       .def_prop_ro("dec", [](FRBRing& x) { return x.dec(); })
       .def_prop_ro("source", [](FRBRing& x) { return x.source(); })
-      .def_prop_ro("obsdate", [](FRBRing& x) { return x.obsdate(); })
-      .def_prop_ro("obstime", [](FRBRing& x) { return x.obstime(); })
       .def_prop_ro("beammode", [](FRBRing& x) { return x.beammode(); })
       .def_prop_ro("observer", [](FRBRing& x) { return x.observer(); })
       .def_prop_ro("gtaccode", [](FRBRing& x) { return x.gtaccode(); })
@@ -399,6 +398,7 @@ NB_MODULE(core, m) {
              return x;
            })
       .def("close", &FRBRing::close)
+      .def("update", &FRBRing::update)
       .def(
           "getblk",
           [](FRBRing& x, int beam, int blk) {
