@@ -31,8 +31,8 @@ CPMAddPackage("gh:TheLartians/PackageProject.cmake@1.8.0")
 add_library(
   ${PROJECT_NAME}
   ${CMAKE_CURRENT_SOURCE_DIR}/include/shazam/hdr.h ${CMAKE_CURRENT_SOURCE_DIR}/include/shazam/tel.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/shazam/frb.h ${CMAKE_CURRENT_SOURCE_DIR}/src/hdr.cc
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/tel.cc ${CMAKE_CURRENT_SOURCE_DIR}/src/frb.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/shazam/frb.h ${CMAKE_CURRENT_SOURCE_DIR}/src/tel.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/frb.cc
 )
 set_target_properties(
   ${PROJECT_NAME}
@@ -82,7 +82,6 @@ nanobind_add_module(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/shazam/hdr.h
   ${CMAKE_CURRENT_SOURCE_DIR}/include/shazam/tel.h
   ${CMAKE_CURRENT_SOURCE_DIR}/include/shazam/frb.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/hdr.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/src/tel.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/src/frb.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/python/shazam/bind.cc

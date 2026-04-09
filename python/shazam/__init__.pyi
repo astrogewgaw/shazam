@@ -1,9 +1,3 @@
-from . import core as core
-from .core import (
-    FRBRing as FRBRing,
-    Header as Header,
-    TELRing as TELRing
-)
+from .core import FRBRing, TELRing
 
-
-__all__: list = ['Header', 'TELRing', 'FRBRing']
+__all__: list = ["TELRing", "FRBRing"]

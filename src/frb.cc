@@ -7,80 +7,6 @@
 namespace shazam {
   constexpr double KDM = 1 / 2.41e-4;
 
-  void FRBRing::update() {
-    if (m_opened) {
-      switch (m_mode) {
-        case READ: {
-          /** Update the header. **/
-          m_hdr.update();
-          m_hdrid = m_hdr.m_hdrid;
-          m_hdrptr = m_hdr.m_hdrptr;
-
-          /** Get timestamps. **/
-          for (int ii = 0; ii < maxblks(); ++ii) {
-            m_timestamps.push_back(std::chrono::system_clock::time_point{
-                std::chrono::seconds{m_bufptr->timestamps[ii].tv_sec}
-                + std::chrono::microseconds{m_bufptr->timestamps[ii].tv_usec}
-                + std::chrono::nanoseconds{(long)m_bufptr->nanoseconds[ii]}});
-          }
-
-          break;
-        }
-        case WRITE: {
-          /** Update the header. **/
-          m_hdr.update();
-          break;
-        }
-      }
-    }
-  }
-
-  void FRBRing::open(MODE mode) {
-    if (not m_opened) {
-      /** Open the header. **/
-      m_mode = mode;
-      m_hdr.open(m_mode);
-
-      /** Calculate size of buffer. **/
-      long BLKSIZE = (long)FRBBLKSAMPS * (long)(m_hdr.m_nf);
-      long BUFSIZE = BLKSIZE * (long)FRBMAXBLKS * (long)(m_hdr.m_nbeamspernode);
-      long FRBSHMSIZE = sizeof(BeamBufferType) + BUFSIZE;
-
-      switch (m_mode) {
-        case READ: {
-          m_bufid = shmget(FRBBUFKEY, FRBSHMSIZE, SHM_RDONLY);
-          if (m_bufid < 0) throw std::runtime_error("UNABLE TO GET FRB SHM ID. ABORT.");
-          m_bufptr = (BeamBufferType*)shmat(m_bufid, NULL, SHM_RDONLY);
-          if ((void*)m_bufptr == (void*)-1)
-            throw std::runtime_error("FAILED TO OPEN FRB SHM. ABORT.");
-          m_dataptr = ((unsigned char*)m_bufptr) + sizeof(BeamBufferType);
-          m_opened = true;
-          update();
-          break;
-        }
-        case WRITE: {
-          m_bufid = shmget(FRBBUFKEY, FRBSHMSIZE, IPC_CREAT | 0666);
-          if (m_bufid < 0) throw std::runtime_error("UNABLE TO GET FRB SHM ID. ABORT.");
-          m_bufptr = (BeamBufferType*)shmat(m_bufid, NULL, 0);
-          if ((void*)m_bufptr == (void*)-1)
-            throw std::runtime_error("FAILED TO OPEN FRB SHM. ABORT.");
-          m_dataptr = ((unsigned char*)m_bufptr) + sizeof(BeamBufferType);
-          m_opened = true;
-          update();
-          break;
-        }
-      }
-    }
-  }
-
-  void FRBRing::close() {
-    if (m_opened) {
-      m_hdr.close();
-      if (shmdt(m_bufptr) == -1) throw std::runtime_error("FAILED TO CLOSE FRB SHM. ABORT.");
-      m_opened = false;
-    }
-  }
-
   unsigned char* FRBRing::ptrtobeam(int beam) {
     if (m_opened) return m_dataptr + blksize() * beam;
     throw std::runtime_error("FRB SHM NOT OPEN. ABORT.");
@@ -93,7 +19,7 @@ namespace shazam {
 
   unsigned char* FRBRing::ptrtotime(int beam, double t) {
     if (m_opened) {
-      // if (t > curtime()) throw std::runtime_error("DATA NOT YET WRITTEN. ABORT.");
+      if (t > curtime()) throw std::runtime_error("DATA NOT YET WRITTEN. ABORT.");
       int blk = (int)std::floor(t / blktime());
       int leftsamps = (int)std::round((t - blk * blktime()) / dt());
       return ptrtoblk(beam, blk) + (long)leftsamps * (long)nf();

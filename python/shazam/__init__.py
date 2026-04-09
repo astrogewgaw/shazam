@@ -1,3 +1,3 @@
-from shazam.core import Header, TELRing, FRBRing
+from shazam.core import TELRing, FRBRing
 
-__all__ = ["Header", "TELRing", "FRBRing"]
+__all__ = ["TELRing", "FRBRing"]

@@ -16,108 +16,18 @@ using namespace nb::literals;
 using Array = nb::ndarray<nb::numpy, unsigned char, nb::ndim<2>>;
 
 NB_MODULE(core, m) {
-  nb::class_<Header>(m, "Header")
+  nb::class_<TELRing>(m, "TELRing")
       /** Constructor. **/
-      .def(nb::init<>())
-
-      /** Class properties. **/
-      .def_prop_ro("mode",
-                   [](Header& x) {
-                     switch (x.mode()) {
-                       default:
-                       case READ:
-                         return "r";
-                       case WRITE:
-                         return "w";
-                     }
-                   })
-      .def_prop_ro("opened", [](Header& x) { return x.opened(); })
-
-      /** PART I: Data properties. **/
-      .def_prop_ro("nf", [](Header& x) { return x.nf(); })
-      .def_prop_ro("fh", [](Header& x) { return x.fh(); })
-      .def_prop_ro("fl", [](Header& x) { return x.fl(); })
-      .def_prop_ro("df", [](Header& x) { return x.df(); })
-      .def_prop_ro("bw", [](Header& x) { return x.bw(); })
-      .def_prop_ro("dt", [](Header& x) { return x.dt(); })
-      .def_prop_ro("nbits", [](Header& x) { return x.nbits(); })
-      .def_prop_ro("nstokes", [](Header& x) { return x.nstokes(); })
-      .def_prop_ro("flipped", [](Header& x) { return x.flipped(); })
-
-      /** PART II: Observation properties. **/
-      .def_prop_ro("ra", [](Header& x) { return x.ra(); })
-      .def_prop_ro("dec", [](Header& x) { return x.dec(); })
-      .def_prop_ro("source", [](Header& x) { return x.source(); })
-      .def_prop_ro("beammode", [](Header& x) { return x.beammode(); })
-      .def_prop_ro("observer", [](Header& x) { return x.observer(); })
-      .def_prop_ro("gtaccode", [](Header& x) { return x.gtaccode(); })
-      .def_prop_ro("gtactitle", [](Header& x) { return x.gtactitle(); })
-      .def_prop_ro("antmaskpol1", [](Header& x) { return x.antmaskpol1(); })
-      .def_prop_ro("antmaskpol2", [](Header& x) { return x.antmaskpol2(); })
-      .def_prop_ro("antspol1", [](Header& x) { return x.antspol1(); })
-      .def_prop_ro("antspol2", [](Header& x) { return x.antspol2(); })
-
-      /** PART III: Beam steering and tiling properties. **/
-      .def_prop_ro("beamid", [](Header& x) { return x.beamid(); })
-      .def_prop_ro("hostid", [](Header& x) { return x.hostid(); })
-      .def_prop_ro("nbeams", [](Header& x) { return x.nbeams(); })
-      .def_prop_ro("hostname", [](Header& x) { return x.hostname(); })
-      .def_prop_ro("npcbaselines", [](Header& x) { return x.npcbaselines(); })
-      .def_prop_ro("nbeamspernode", [](Header& x) { return x.nbeamspernode(); })
-      .def_prop_ro("beamras", [](Header& x) { return x.beamras(); })
-      .def_prop_ro("beamdecs", [](Header& x) { return x.beamdecs(); })
-
-      /** Public methods. **/
-      .def("open",
-           [](Header& x, std::string mode) {
+      .def(nb::new_([](std::string mode) {
              if (mode == "r") {
-               x.open(READ);
+               return TELRing(READ);
              } else if ((mode == "w") || (mode == "rw")) {
-               x.open(WRITE);
+               return TELRing(WRITE);
              } else {
                throw std::runtime_error("MODE DOESN'T EXIST. ABORT.");
              }
-             return x;
-           })
-      .def("copy", &Header::copy)
-      .def("close", &Header::close)
-      .def("update", &Header::update)
-      .def("asdict", [](Header& x) {
-        nb::dict header;
-        header["nf"] = x.nf();
-        header["fh"] = x.fh();
-        header["fl"] = x.fl();
-        header["df"] = x.df();
-        header["bw"] = x.bw();
-        header["dt"] = x.dt();
-        header["ra"] = x.ra();
-        header["dec"] = x.dec();
-        header["nbits"] = x.nbits();
-        header["beamid"] = x.beamid();
-        header["hostid"] = x.hostid();
-        header["nbeams"] = x.nbeams();
-        header["source"] = x.source();
-        header["nstokes"] = x.nstokes();
-        header["flipped"] = x.flipped();
-        header["beamras"] = x.beamras();
-        header["beamdecs"] = x.beamdecs();
-        header["hostname"] = x.hostname();
-        header["beammode"] = x.beammode();
-        header["observer"] = x.observer();
-        header["antspol1"] = x.antspol1();
-        header["antspol2"] = x.antspol2();
-        header["gtaccode"] = x.gtaccode();
-        header["gtactitle"] = x.gtactitle();
-        header["antmaskpol1"] = x.antmaskpol1();
-        header["antmaskpol2"] = x.antmaskpol2();
-        header["npcbaselines"] = x.npcbaselines();
-        header["nbeamspernode"] = x.nbeamspernode();
-        return header;
-      });
-
-  nb::class_<TELRing>(m, "TELRing")
-      /** Constructor. **/
-      .def(nb::init<>())
+           }),
+           "mode"_a)
 
       /** Class properties. **/
       .def_prop_ro("mode",
@@ -167,39 +77,39 @@ NB_MODULE(core, m) {
       .def_prop_ro("beamdecs", [](TELRing& x) { return x.beamdecs(); })
 
       /** Summarise all properties as a dictionary. **/
-      .def("header",
-           [](TELRing& x) {
-             nb::dict header;
-             header["nf"] = x.nf();
-             header["fh"] = x.fh();
-             header["fl"] = x.fl();
-             header["df"] = x.df();
-             header["bw"] = x.bw();
-             header["dt"] = x.dt();
-             header["ra"] = x.ra();
-             header["dec"] = x.dec();
-             header["nbits"] = x.nbits();
-             header["beamid"] = x.beamid();
-             header["hostid"] = x.hostid();
-             header["nbeams"] = x.nbeams();
-             header["source"] = x.source();
-             header["nstokes"] = x.nstokes();
-             header["flipped"] = x.flipped();
-             header["beamras"] = x.beamras();
-             header["beamdecs"] = x.beamdecs();
-             header["hostname"] = x.hostname();
-             header["beammode"] = x.beammode();
-             header["observer"] = x.observer();
-             header["antspol1"] = x.antspol1();
-             header["antspol2"] = x.antspol2();
-             header["gtaccode"] = x.gtaccode();
-             header["gtactitle"] = x.gtactitle();
-             header["antmaskpol1"] = x.antmaskpol1();
-             header["antmaskpol2"] = x.antmaskpol2();
-             header["npcbaselines"] = x.npcbaselines();
-             header["nbeamspernode"] = x.nbeamspernode();
-             return header;
-           })
+      .def_prop_ro("header",
+                   [](TELRing& x) {
+                     nb::dict header;
+                     header["nf"] = x.nf();
+                     header["fh"] = x.fh();
+                     header["fl"] = x.fl();
+                     header["df"] = x.df();
+                     header["bw"] = x.bw();
+                     header["dt"] = x.dt();
+                     header["ra"] = x.ra();
+                     header["dec"] = x.dec();
+                     header["nbits"] = x.nbits();
+                     header["beamid"] = x.beamid();
+                     header["hostid"] = x.hostid();
+                     header["nbeams"] = x.nbeams();
+                     header["source"] = x.source();
+                     header["nstokes"] = x.nstokes();
+                     header["flipped"] = x.flipped();
+                     header["beamras"] = x.beamras();
+                     header["beamdecs"] = x.beamdecs();
+                     header["hostname"] = x.hostname();
+                     header["beammode"] = x.beammode();
+                     header["observer"] = x.observer();
+                     header["antspol1"] = x.antspol1();
+                     header["antspol2"] = x.antspol2();
+                     header["gtaccode"] = x.gtaccode();
+                     header["gtactitle"] = x.gtactitle();
+                     header["antmaskpol1"] = x.antmaskpol1();
+                     header["antmaskpol2"] = x.antmaskpol2();
+                     header["npcbaselines"] = x.npcbaselines();
+                     header["nbeamspernode"] = x.nbeamspernode();
+                     return header;
+                   })
 
       /** PART IV: Shared memory properties. **/
       .def_prop_ro("maxblks", [](TELRing& x) { return x.maxblks(); })
@@ -231,19 +141,6 @@ NB_MODULE(core, m) {
       .def_prop_ro("timestamps", [](FRBRing& x) { return x.timestamps(); })
 
       /** Public methods. **/
-      .def("open",
-           [](TELRing& x, std::string mode) {
-             if (mode == "r") {
-               x.open(READ);
-             } else if ((mode == "w") || (mode == "rw")) {
-               x.open(WRITE);
-             } else {
-               throw std::runtime_error("MODE DOESN'T EXIST. ABORT.");
-             }
-             return x;
-           })
-      .def("close", &TELRing::close)
-      .def("update", &TELRing::update)
       .def(
           "getblk",
           [](TELRing& x, int beam, int blk) {
@@ -277,7 +174,16 @@ NB_MODULE(core, m) {
 
   nb::class_<FRBRing>(m, "FRBRing")
       /** Constructor. **/
-      .def(nb::init<>())
+      .def(nb::new_([](std::string mode) {
+             if (mode == "r") {
+               return FRBRing(READ);
+             } else if ((mode == "w") || (mode == "rw")) {
+               return FRBRing(WRITE);
+             } else {
+               throw std::runtime_error("MODE DOESN'T EXIST. ABORT.");
+             }
+           }),
+           "mode"_a)
 
       /** Class properties. **/
       .def_prop_ro("mode",
@@ -327,40 +233,39 @@ NB_MODULE(core, m) {
       .def_prop_ro("beamdecs", [](FRBRing& x) { return x.beamdecs(); })
 
       /** Summarise all properties as a dictionary. **/
-      /** Summarise all properties as a dictionary. **/
-      .def("header",
-           [](FRBRing& x) {
-             nb::dict header;
-             header["nf"] = x.nf();
-             header["fh"] = x.fh();
-             header["fl"] = x.fl();
-             header["df"] = x.df();
-             header["bw"] = x.bw();
-             header["dt"] = x.dt();
-             header["ra"] = x.ra();
-             header["dec"] = x.dec();
-             header["nbits"] = x.nbits();
-             header["beamid"] = x.beamid();
-             header["hostid"] = x.hostid();
-             header["nbeams"] = x.nbeams();
-             header["source"] = x.source();
-             header["nstokes"] = x.nstokes();
-             header["flipped"] = x.flipped();
-             header["beamras"] = x.beamras();
-             header["beamdecs"] = x.beamdecs();
-             header["hostname"] = x.hostname();
-             header["beammode"] = x.beammode();
-             header["observer"] = x.observer();
-             header["antspol1"] = x.antspol1();
-             header["antspol2"] = x.antspol2();
-             header["gtaccode"] = x.gtaccode();
-             header["gtactitle"] = x.gtactitle();
-             header["antmaskpol1"] = x.antmaskpol1();
-             header["antmaskpol2"] = x.antmaskpol2();
-             header["npcbaselines"] = x.npcbaselines();
-             header["nbeamspernode"] = x.nbeamspernode();
-             return header;
-           })
+      .def_prop_ro("header",
+                   [](FRBRing& x) {
+                     nb::dict header;
+                     header["nf"] = x.nf();
+                     header["fh"] = x.fh();
+                     header["fl"] = x.fl();
+                     header["df"] = x.df();
+                     header["bw"] = x.bw();
+                     header["dt"] = x.dt();
+                     header["ra"] = x.ra();
+                     header["dec"] = x.dec();
+                     header["nbits"] = x.nbits();
+                     header["beamid"] = x.beamid();
+                     header["hostid"] = x.hostid();
+                     header["nbeams"] = x.nbeams();
+                     header["source"] = x.source();
+                     header["nstokes"] = x.nstokes();
+                     header["flipped"] = x.flipped();
+                     header["beamras"] = x.beamras();
+                     header["beamdecs"] = x.beamdecs();
+                     header["hostname"] = x.hostname();
+                     header["beammode"] = x.beammode();
+                     header["observer"] = x.observer();
+                     header["antspol1"] = x.antspol1();
+                     header["antspol2"] = x.antspol2();
+                     header["gtaccode"] = x.gtaccode();
+                     header["gtactitle"] = x.gtactitle();
+                     header["antmaskpol1"] = x.antmaskpol1();
+                     header["antmaskpol2"] = x.antmaskpol2();
+                     header["npcbaselines"] = x.npcbaselines();
+                     header["nbeamspernode"] = x.nbeamspernode();
+                     return header;
+                   })
 
       /** PART IV: Shared memory properties. **/
       .def_prop_ro("maxblks", [](FRBRing& x) { return x.maxblks(); })
@@ -386,19 +291,6 @@ NB_MODULE(core, m) {
       .def_prop_ro("timestamps", [](FRBRing& x) { return x.timestamps(); })
 
       /** Public methods. **/
-      .def("open",
-           [](FRBRing& x, std::string mode) {
-             if (mode == "r") {
-               x.open(READ);
-             } else if ((mode == "w") || (mode == "rw")) {
-               x.open(WRITE);
-             } else {
-               throw std::runtime_error("MODE DOESN'T EXIST. ABORT.");
-             }
-             return x;
-           })
-      .def("close", &FRBRing::close)
-      .def("update", &FRBRing::update)
       .def(
           "getblk",
           [](FRBRing& x, int beam, int blk) {
